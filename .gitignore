@@ -1,0 +1,14 @@
+# Your API key lives here. Never commit it.
+.env
+
+__pycache__/
+*.pyc
+.pytest_cache/
+.verify/
+
+# bytecode moved aside because a synced .pyc can shadow its source
+_stale_pycache/
+.uicap*
+
+# tetgen debug dumps
+_skipped.*

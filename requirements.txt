@@ -1,0 +1,27 @@
+# Phase 1 needs very little. Later phases add more:
+#   phase 3  cadquery        (parametric CAD via OpenCascade)
+#   (phase 4's fastapi/uvicorn are listed below)
+#   phase 7  pymoo           (optimisation and Pareto fronts)
+numpy>=1.24
+pytest>=7.0
+
+# phase 3: parametric solids, mass properties, STEP export
+cadquery>=2.7
+
+# phase 4: the browser front end. three.js is vendored under
+# psrt/server/static/vendor, so the tool needs no internet to draw.
+fastapi>=0.110
+uvicorn[standard]>=0.27
+httpx2            # only needed to run the server tests
+
+# phase 5: the assistant. Needs ANTHROPIC_API_KEY in your environment;
+# everything else in the tool works without it.
+anthropic>=0.40
+
+# phase 6: FEA. Not gmsh and CalculiX as originally planned -- CalculiX is a
+# per-platform binary you have to go and find, and the gmsh wheel wants
+# OpenGL libraries a headless machine does not have. These three install with
+# pip on Windows and need nothing else.
+scikit-fem>=8.1
+tetgen>=0.6
+scipy>=1.10

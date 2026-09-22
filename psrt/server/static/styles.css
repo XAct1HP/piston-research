@@ -1,0 +1,542 @@
+/* Dark technical interface. The palette is the validated data-viz reference
+   set: categorical slots for the traces, the reserved status palette for
+   safety factors, and recessive chrome so the data carries the page. */
+:root {
+  color-scheme: dark;
+
+  --surface-1:      #1a1a19;   /* chart + panel surface */
+  --page:           #0d0d0d;
+  --raised:         #212120;
+  --text-primary:   #ffffff;
+  --text-secondary: #c3c2b7;
+  --text-muted:     #898781;
+  --grid:           #2c2c2a;
+  --baseline:       #383835;
+  --border:         rgba(255, 255, 255, 0.10);
+
+  --series-1: #3987e5;   /* cylinder pressure */
+  --series-2: #d95926;   /* pin force */
+  --series-3: #199e70;   /* torque */
+  --series-4: #9085e9;   /* side thrust */
+
+  --good:     #0ca30c;
+  --warning:  #fab219;
+  --serious:  #ec835a;
+  --critical: #d03b3b;
+
+  --rail: 310px;
+  --font: system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono: ui-monospace, "SF Mono", "Cascadia Mono", Menlo, monospace;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--page);
+  color: var(--text-primary);
+  font: 14px/1.45 var(--font);
+  height: 100vh;
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  overflow: hidden;
+}
+
+/* --- header --------------------------------------------------------- */
+
+.bar {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 16px; padding: 10px 16px;
+  background: var(--surface-1); border-bottom: 1px solid var(--border);
+}
+.brand { display: flex; align-items: center; gap: 12px; }
+.mark {
+  width: 26px; height: 26px; border-radius: 50%;
+  border: 2px solid var(--series-1);
+  background: radial-gradient(circle at 50% 42%, var(--series-1) 0 3px, transparent 4px);
+  flex: none;
+}
+.bar h1 { font-size: 15px; font-weight: 600; margin: 0; letter-spacing: -0.01em; }
+.bar p { margin: 0; font-size: 11px; color: var(--text-muted); }
+.bar-controls { display: flex; align-items: center; gap: 10px; }
+
+.field { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--text-muted); }
+.field input {
+  width: 74px; padding: 5px 7px; font: 13px var(--mono);
+  background: var(--page); color: var(--text-primary);
+  border: 1px solid var(--border); border-radius: 5px;
+}
+.field em { font-style: normal; }
+
+button.ghost {
+  padding: 6px 12px; font: 500 12px var(--font);
+  background: var(--raised); color: var(--text-secondary);
+  border: 1px solid var(--border); border-radius: 5px; cursor: pointer;
+}
+button.ghost:hover:not(:disabled) { color: var(--text-primary); border-color: var(--text-muted); }
+button.ghost:disabled { opacity: .4; cursor: default; }
+
+.status { font-size: 11px; color: var(--text-muted); min-width: 110px; }
+
+/* --- layout --------------------------------------------------------- */
+
+main {
+  display: grid;
+  grid-template-columns: var(--rail) minmax(0, 1fr) var(--rail);
+  min-height: 0;
+  overflow: hidden;
+}
+/* A grid track defaults to min-width:auto, so a 1fr column refuses to shrink
+   below its content's minimum. A canvas counts as content with a hard
+   minimum, which is how the middle column used to push the right rail off
+   the screen. These let the tracks actually shrink. */
+main > * { min-width: 0; min-height: 0; }
+
+.rail {
+  background: var(--surface-1); border-right: 1px solid var(--border);
+  overflow-y: auto; min-height: 0;
+}
+.rail.right {
+  border-right: none; border-left: 1px solid var(--border);
+  overflow: hidden; display: flex; flex-direction: column;
+}
+.rail-tabs { display: flex; border-bottom: 1px solid var(--border); flex: none; }
+.rail-tabs button {
+  flex: 1; padding: 9px 8px; cursor: pointer; background: transparent;
+  border: none; border-bottom: 2px solid transparent;
+  font: 600 11px var(--font); letter-spacing: .07em; text-transform: uppercase;
+  color: var(--text-muted);
+}
+.rail-tabs button.on { color: var(--text-primary); border-bottom-color: var(--series-1); }
+.tabpanel { min-height: 0; flex: 1; }
+.tabpanel.scrolls { overflow-y: auto; }
+.tabpanel.chat { display: flex; flex-direction: column; }
+
+/* A class selector outranks the [hidden] attribute, so .tabpanel.chat's
+   display:flex was overriding it and the Assistant panel rendered under the
+   Margins tab whichever tab was selected. This has to be at least as
+   specific as the rules above. */
+.tabpanel[hidden] { display: none; }
+
+/* --- assistant ------------------------------------------------------- */
+
+#chat-log { flex: 1; min-height: 0; overflow-y: auto; padding: 12px 13px; }
+.msg { margin-bottom: 13px; font-size: 12.5px; line-height: 1.5; }
+.msg.system { color: var(--text-muted); font-size: 11.5px; }
+.msg.system p { margin: 0 0 9px; }
+.msg.user {
+  background: var(--raised); border: 1px solid var(--border);
+  border-radius: 8px; padding: 8px 10px; color: var(--text-primary);
+}
+.msg.assistant { color: var(--text-secondary); white-space: pre-wrap; }
+.msg.assistant strong { color: var(--text-primary); }
+.msg.failed { color: var(--critical); }
+
+.examples { display: flex; flex-wrap: wrap; gap: 5px; }
+button.example {
+  font: 11px var(--font); padding: 4px 8px; cursor: pointer;
+  background: var(--raised); color: var(--text-secondary);
+  border: 1px solid var(--border); border-radius: 12px;
+}
+button.example:hover { color: var(--text-primary); border-color: var(--series-1); }
+
+.chip {
+  display: flex; align-items: center; gap: 6px;
+  font: 10.5px var(--mono); color: var(--text-muted);
+  background: var(--raised); border: 1px solid var(--border);
+  border-radius: 11px; padding: 3px 9px; margin: 0 0 5px 0;
+  max-width: 100%; overflow: hidden;
+}
+.chip span.what { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.chip .dot { flex: none; }
+.chip .dot { width: 5px; height: 5px; border-radius: 50%; background: var(--series-1); }
+.chip.failed .dot { background: var(--critical); }
+
+.proposal {
+  border: 1px solid var(--series-1); border-radius: 8px;
+  padding: 10px 11px; margin: 4px 0 12px; background: rgba(57,135,229,.06);
+}
+.proposal h4 { margin: 0 0 6px; font-size: 11px; text-transform: uppercase;
+  letter-spacing: .07em; color: var(--series-1); }
+.proposal .change { font: 11.5px var(--mono); color: var(--text-primary); }
+.proposal .why { font-size: 11.5px; color: var(--text-secondary); margin: 5px 0; }
+.proposal .worse { font-size: 11px; color: var(--serious); margin-top: 5px; }
+.proposal .actions { display: flex; gap: 7px; margin-top: 9px; }
+.proposal button { flex: 1; padding: 5px; font: 600 11px var(--font); cursor: pointer;
+  border-radius: 5px; border: 1px solid var(--border); background: var(--raised);
+  color: var(--text-secondary); }
+.proposal button.accept { border-color: var(--good); color: var(--good); }
+.proposal button:hover { color: var(--text-primary); }
+.proposal.settled { opacity: .55; border-color: var(--border); background: transparent; }
+
+.chat-input {
+  flex: none; display: flex; gap: 7px; padding: 10px;
+  border-top: 1px solid var(--border); background: var(--surface-1);
+}
+.chat-input textarea {
+  flex: 1; resize: none; padding: 7px 9px; font: 12.5px var(--font);
+  background: var(--page); color: var(--text-primary);
+  border: 1px solid var(--border); border-radius: 6px;
+}
+.chat-input textarea:focus { outline: none; border-color: var(--series-1); }
+.chat-input button { align-self: flex-end; }
+.chat-note { padding: 10px 13px; font-size: 11.5px; color: var(--warning);
+  border-top: 1px solid var(--border); }
+.rail-head { padding: 14px 14px 10px; border-bottom: 1px solid var(--border); position: sticky; top: 0; background: var(--surface-1); z-index: 2; }
+.rail-head h2 { margin: 0 0 4px; font-size: 12px; text-transform: uppercase; letter-spacing: .08em; color: var(--text-secondary); }
+.rail-head p { margin: 0; font-size: 11px; color: var(--text-muted); }
+
+/* --- parameter rail -------------------------------------------------- */
+
+details.group { border-bottom: 1px solid var(--border); }
+details.group > summary {
+  padding: 9px 14px; cursor: pointer; font-size: 11px; font-weight: 600;
+  text-transform: uppercase; letter-spacing: .07em; color: var(--text-secondary);
+  list-style: none; display: flex; justify-content: space-between;
+}
+details.group > summary::-webkit-details-marker { display: none; }
+details.group > summary::after { content: "+"; color: var(--text-muted); }
+details.group[open] > summary::after { content: "\2212"; }
+
+.param { padding: 6px 14px 9px; display: grid; grid-template-columns: 1fr 96px; gap: 6px 8px; align-items: center; }
+.param:hover { background: rgba(255,255,255,.03); }
+.param .label { font-size: 12px; color: var(--text-secondary); }
+.param .tag { font-size: 9px; padding: 1px 5px; border-radius: 3px; margin-left: 5px; vertical-align: 1px; letter-spacing: .04em; }
+.tag.locked { background: rgba(208,59,59,.18); color: var(--critical); }
+.tag.derived { background: rgba(57,135,229,.16); color: var(--series-1); }
+.tag.bounded { background: rgba(250,178,25,.15); color: var(--warning); }
+.param input {
+  padding: 4px 6px; font: 12px var(--mono); text-align: right;
+  background: var(--page); color: var(--text-primary);
+  border: 1px solid var(--border); border-radius: 4px; width: 100%;
+}
+.param input:disabled { background: transparent; color: var(--text-muted); border-color: transparent; }
+.param .why { grid-column: 1 / -1; font-size: 10.5px; color: var(--text-muted); line-height: 1.35; }
+.param .range { grid-column: 1 / -1; font: 10px var(--mono); color: var(--text-muted); }
+
+/* --- viewport -------------------------------------------------------- */
+
+.stage { display: grid; grid-template-rows: auto minmax(0,1fr) auto; min-width: 0; min-height: 0; overflow: hidden; background: var(--page); }
+.stage-bar { display: flex; align-items: center; gap: 12px; padding: 8px 14px; border-bottom: 1px solid var(--border); flex-wrap: wrap; }
+.spacer { flex: 1; }
+
+.segmented { display: inline-flex; border: 1px solid var(--border); border-radius: 6px; overflow: hidden; }
+.segmented button {
+  padding: 5px 12px; font: 500 12px var(--font); cursor: pointer;
+  background: transparent; color: var(--text-muted); border: none;
+  border-right: 1px solid var(--border);
+}
+.segmented button:last-child { border-right: none; }
+.segmented button.on { background: var(--raised); color: var(--text-primary); }
+
+.toggle { display: inline-flex; align-items: center; gap: 5px; font-size: 11.5px; color: var(--text-muted); cursor: pointer; }
+.toggle input { accent-color: var(--series-1); }
+
+#viewport { min-width: 0; min-height: 0; position: relative; overflow: hidden; }
+#viewport canvas { display: block; width: 100%; height: 100%; }
+
+.crank { display: flex; align-items: center; gap: 12px; padding: 9px 16px; border-top: 1px solid var(--border); }
+.crank label { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: .06em; }
+.crank input[type=range] { flex: 1; accent-color: var(--series-1); }
+.crank output { font: 13px var(--mono); color: var(--text-primary); min-width: 62px; text-align: right; }
+
+/* --- margins --------------------------------------------------------- */
+
+#margin-chart { padding: 12px 14px 4px; }
+.mbar { margin-bottom: 9px; }
+.mbar .row { display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 3px; gap: 8px; }
+.mbar .who { color: var(--text-secondary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mbar .sf { font: 600 11px var(--mono); flex: none; }
+.mbar .track { position: relative; height: 7px; background: var(--grid); border-radius: 4px; overflow: hidden; }
+.mbar .fill { height: 100%; border-radius: 4px; }
+.mbar .limit { position: absolute; top: -2px; bottom: -2px; width: 2px; background: var(--text-muted); }
+
+.margin-item { padding: 9px 14px; border-top: 1px solid var(--border); font-size: 11.5px; }
+.margin-item .mode { color: var(--text-secondary); }
+.margin-item .meta { color: var(--text-muted); font-size: 10.5px; margin-top: 3px; }
+.margin-item .eq { font: 10px var(--mono); color: var(--text-muted); margin-top: 4px; word-break: break-word; }
+
+.pill { display: inline-block; font-size: 9px; padding: 1px 6px; border-radius: 9px; letter-spacing: .05em; margin-right: 6px; }
+.pill.good { background: rgba(12,163,12,.18); color: var(--good); }
+.pill.warning { background: rgba(250,178,25,.16); color: var(--warning); }
+.pill.serious { background: rgba(236,131,90,.16); color: var(--serious); }
+.pill.critical { background: rgba(208,59,59,.2); color: var(--critical); }
+
+/* --- charts ---------------------------------------------------------- */
+
+.charts {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px;
+  background: var(--border); border-top: 1px solid var(--border);
+}
+.charts figure { margin: 0; min-width: 0; padding: 9px 12px 6px; background: var(--surface-1); }
+.charts figcaption {
+  font-size: 11px; color: var(--text-secondary); margin-bottom: 5px;
+  display: flex; align-items: center; gap: 8px;
+}
+.charts .unit { color: var(--text-muted); font: 10px var(--mono); }
+.legend { margin-left: auto; display: flex; gap: 10px; align-items: center; font-size: 10px; color: var(--text-muted); }
+.legend i { display: inline-block; width: 9px; height: 2px; background: var(--c); margin-right: 4px; vertical-align: 3px; }
+.charts canvas { width: 100%; display: block; }
+
+/* The stage keeps the space it needs; the rails give way first. */
+@media (max-width: 1600px) { :root { --rail: 272px; } }
+@media (max-width: 1360px) { :root { --rail: 240px; }
+  .charts figure { padding: 7px 9px 5px; }
+  .charts figcaption .legend { display: none; }
+}
+@media (max-width: 1120px) {
+  main { grid-template-columns: var(--rail) minmax(0, 1fr); }
+  .rail.right { display: none; }
+}
+
+/* --- toast ----------------------------------------------------------- */
+
+.toast {
+  position: fixed; left: 50%; bottom: 26px; transform: translateX(-50%) translateY(14px);
+  max-width: 560px; padding: 10px 15px; border-radius: 7px;
+  background: var(--raised); border: 1px solid var(--border);
+  font-size: 12.5px; line-height: 1.45; color: var(--text-primary);
+  opacity: 0; pointer-events: none; transition: opacity .16s, transform .16s; z-index: 50;
+}
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+.toast.refused { border-color: var(--critical); }
+.toast strong { color: var(--critical); }
+
+
+/* --- FEA legend ------------------------------------------------------- */
+/* The viewport is the positioning context; the legend floats over it so it
+   costs the canvas no layout width. */
+#viewport { position: relative; }
+
+#fea-legend {
+  position: absolute;
+  left: 14px;
+  bottom: 14px;
+  width: 190px;
+  padding: 10px 12px 11px;
+  border-radius: 8px;
+  background: rgba(16, 18, 24, 0.82);
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  backdrop-filter: blur(6px);
+  font-size: 12px;
+  color: #e7e9ee;
+  pointer-events: auto;
+}
+
+#fea-legend[hidden] { display: none; }
+
+.legend-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 7px;
+}
+
+.legend-head strong { font-weight: 600; letter-spacing: 0.01em; }
+
+.legend-head button {
+  background: none;
+  border: 0;
+  color: #9aa0ab;
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0 2px;
+}
+
+.legend-head button:hover { color: #fff; }
+
+/* Matches the shader ramp in app.js: green through yellow to red. */
+.legend-bar {
+  height: 9px;
+  border-radius: 3px;
+  background: linear-gradient(to right,
+    #1f9d55 0%, #7cb342 28%, #f2c200 55%, #ef7d1a 78%, #d43f2a 100%);
+}
+
+.legend-scale {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 4px;
+  color: #9aa0ab;
+  font-variant-numeric: tabular-nums;
+}
+
+#fea-caption {
+  margin: 7px 0 0;
+  color: #9aa0ab;
+  line-height: 1.35;
+}
+
+/* The Stress group sits in the same segmented control as the view modes, but
+   needs a label in front of its buttons. */
+.segmented-label {
+  padding: 0 9px 0 10px;
+  color: #9aa0ab;
+  font-size: 12px;
+  align-self: center;
+  letter-spacing: 0.02em;
+}
+
+
+/* --- block envelope --------------------------------------------------- */
+/* The bore ceiling belongs beside the parameters, not in a tab: it is the
+   one constraint that comes from the block being a real object, and it
+   should be visible before anyone types a bigger number. */
+.envelope {
+  margin: 0 0 14px;
+  padding: 11px 13px 12px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  background: rgba(255, 255, 255, 0.035);
+  font-size: 12px;
+}
+
+.envelope h3 {
+  margin: 0 0 8px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: #e7e9ee;
+}
+
+.envelope .bar {
+  position: relative;
+  height: 8px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.10);
+  overflow: hidden;
+  margin: 8px 0 6px;
+}
+
+.envelope .bar span {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  background: linear-gradient(to right, #4f8ef7, #7cb342);
+}
+
+.envelope .row {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  color: #9aa0ab;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.6;
+}
+
+.envelope .row b { color: #e7e9ee; font-weight: 600; }
+
+.envelope .why { margin: 7px 0 0; color: #9aa0ab; line-height: 1.4; }
+
+.envelope .tier {
+  display: inline-block;
+  padding: 1px 6px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.envelope .tier-1 { background: rgba(124, 179, 66, 0.22); color: #a9d275; }
+.envelope .tier-2 { background: rgba(79, 142, 247, 0.22); color: #92b7f7; }
+.envelope .tier-3 { background: rgba(212, 63, 42, 0.22); color: #e88a7c; }
+
+
+/* --- optimiser panel -------------------------------------------------- */
+/* The optimise panel matches the rail's own gutter so its numbers do not
+   run into the edge of the window. */
+#tab-optimise > .opt-controls,
+#tab-optimise > #chart-frontier,
+#tab-optimise > #opt-result { margin-left: 14px; margin-right: 14px; }
+
+.opt-controls {
+  display: flex;
+  gap: 7px;
+  margin-top: 12px;
+  margin-bottom: 12px;
+}
+
+.opt-controls select { flex: 1 1 90px; }
+.opt-controls button { flex: 0 0 auto; padding-left: 10px; padding-right: 10px; }
+
+.opt-controls select {
+  flex: 1 1 auto;
+  min-width: 0;
+  background: rgba(255, 255, 255, 0.05);
+  color: #e7e9ee;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 6px;
+  padding: 5px 8px;
+  font-size: 12px;
+}
+
+#chart-frontier {
+  width: auto;
+  max-width: 100%;
+  display: block;
+  box-sizing: border-box;
+  margin-bottom: 12px;
+}
+
+#opt-result { font-size: 12px; color: #c9cdd5; line-height: 1.5; }
+
+#opt-result h4 {
+  margin: 12px 0 5px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #e7e9ee;
+  letter-spacing: 0.02em;
+}
+
+#opt-result table { width: 100%; border-collapse: collapse; }
+
+#opt-result td {
+  padding: 2px 0;
+  font-variant-numeric: tabular-nums;
+  vertical-align: top;
+}
+
+#opt-result td.num { text-align: right; white-space: nowrap; }
+#opt-result .up { color: #a9d275; }
+#opt-result .down { color: #e88a7c; }
+
+/* The warnings are the point of the panel, so they are not small print. */
+#opt-result .doubt {
+  margin: 7px 0 0;
+  padding: 8px 10px;
+  border-radius: 6px;
+  border-left: 2px solid rgba(232, 138, 124, 0.7);
+  background: rgba(212, 63, 42, 0.10);
+  color: #d8c3bd;
+}
+
+
+#fea-mode {
+  background: rgba(255, 255, 255, 0.07);
+  color: #e7e9ee;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 5px;
+  padding: 2px 5px;
+  font-size: 11px;
+}
+
+/* The legend gets taller in yield mode; keep it off the crank slider. */
+#fea-legend { width: 215px; }
+
+
+/* The solver's own notes, folded away until wanted. */
+.fea-notes { margin-top: 7px; }
+.fea-notes summary {
+  cursor: pointer;
+  color: #9aa0ab;
+  font-size: 11px;
+}
+.fea-notes ul {
+  margin: 5px 0 0;
+  padding-left: 15px;
+  color: #9aa0ab;
+  font-size: 11px;
+  line-height: 1.4;
+}
+.fea-notes li { margin-bottom: 3px; }

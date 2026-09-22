@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Piston System Research Tool</title>
+<link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+
+<header class="bar">
+  <div class="brand">
+    <span class="mark"></span>
+    <div>
+      <h1 id="engine-name">loading</h1>
+      <p id="engine-note"></p>
+    </div>
+  </div>
+  <div class="bar-controls">
+    <label class="field">
+      <span>engine speed</span>
+      <input type="number" id="rpm" min="500" max="12000" step="100" value="4600">
+      <em>rpm</em>
+    </label>
+    <button id="undo" class="ghost" disabled>Undo</button>
+    <button id="save" class="ghost">Save</button>
+    <span id="status" class="status"></span>
+  </div>
+</header>
+
+<main>
+  <!-- LEFT: the design state -->
+  <aside class="rail" id="rail">
+    <div class="rail-head">
+      <h2>Design state</h2>
+      <p>Locked parameters refuse writes. Bounded ones refuse writes outside
+         their limits, and say why.</p>
+    </div>
+    <div id="envelope" class="envelope"></div>
+    <div id="params"></div>
+  </aside>
+
+  <!-- CENTRE: the assembly -->
+  <section class="stage">
+    <div class="stage-bar">
+      <div class="segmented" id="viewmode">
+        <button data-mode="assembly" class="on">Assembly</button>
+        <button data-mode="section">Section</button>
+        <button data-mode="exploded">Exploded</button>
+      </div>
+      <label class="toggle"><input type="checkbox" id="show-forces" checked> force vectors</label>
+      <label class="toggle"><input type="checkbox" id="show-sleeve" checked> sleeve</label>
+      <div class="spacer"></div>
+      <span class="segmented" id="fea-parts"></span>
+      <button id="play" class="ghost">Play</button>
+    </div>
+    <div id="viewport">
+      <div id="fea-legend" hidden>
+        <div class="legend-head">
+          <select id="fea-mode" title="what the colours are scaled to">
+            <option value="distribution">distribution</option>
+            <option value="yield">vs yield</option>
+          </select>
+          <button id="fea-clear" title="back to the assembly">&times;</button>
+        </div>
+        <div class="legend-bar"></div>
+        <div class="legend-scale"><span id="legend-lo">0</span><span
+          id="legend-hi">0</span></div>
+        <p id="fea-caption"></p>
+      </div>
+    </div>
+    <div class="crank">
+      <label for="crank">crank angle</label>
+      <input type="range" id="crank" min="0" max="360" value="180" step="1">
+      <output id="crank-value">0&deg;</output>
+    </div>
+  </section>
+
+  <!-- RIGHT: what survives, and the assistant -->
+  <aside class="rail right">
+    <div class="rail-tabs" id="rail-tabs">
+      <button data-tab="margins" class="on">Margins</button>
+      <button data-tab="optimise">Optimise</button>
+      <button data-tab="assistant">Assistant</button>
+    </div>
+
+    <div class="tabpanel scrolls" id="tab-margins">
+      <div class="rail-head">
+        <h2>Structural margins</h2>
+        <p id="binding-note"></p>
+      </div>
+      <div id="margin-chart"></div>
+      <div id="margins"></div>
+    </div>
+
+    <div class="tabpanel scrolls" id="tab-optimise" hidden>
+      <div class="rail-head">
+        <h2>What it costs</h2>
+        <p>Every point is a separate constrained search from this design.
+           Nothing here is committed: read the doubts before the numbers.</p>
+      </div>
+      <div class="opt-controls">
+        <select id="opt-objective">
+          <option value="torque">torque</option>
+          <option value="power">power</option>
+          <option value="safety_factor">safety factor</option>
+          <option value="reciprocating_mass">reciprocating mass</option>
+          <option value="side_thrust">side thrust</option>
+        </select>
+        <button id="opt-run" class="ghost">Optimise</button>
+        <button id="opt-front" class="ghost">Frontier</button>
+      </div>
+      <canvas id="chart-frontier" height="170"></canvas>
+      <div id="opt-result"></div>
+    </div>
+
+    <div class="tabpanel chat" id="tab-assistant" hidden>
+      <div id="chat-log">
+        <div class="msg system">
+          <p>Ask about the design in plain language. Every number the
+             assistant states comes from a tool call against this engine
+             &mdash; it has no calculator of its own.</p>
+          <p class="examples">
+            <button class="example">What is limiting this engine?</button>
+            <button class="example">How do I get more torque?</button>
+            <button class="example">Why is the crown binding?</button>
+            <button class="example">What happens at 7500 rpm?</button>
+          </p>
+        </div>
+      </div>
+      <div class="chat-input">
+        <textarea id="chat-text" rows="2"
+          placeholder="Ask about this design&hellip;"></textarea>
+        <button id="chat-send" class="ghost">Ask</button>
+      </div>
+    </div>
+  </aside>
+</main>
+
+<footer class="charts">
+  <figure>
+    <figcaption>Cylinder pressure<span class="unit">bar</span></figcaption>
+    <canvas id="chart-pressure" height="150"></canvas>
+  </figure>
+  <figure>
+    <figcaption>
+      Pin force and side thrust<span class="unit">kN</span>
+      <span class="legend">
+        <i style="--c:var(--series-2)"></i>pin (+ compression)
+        <i style="--c:var(--series-4)"></i>side thrust
+      </span>
+    </figcaption>
+    <canvas id="chart-force" height="150"></canvas>
+  </figure>
+  <figure>
+    <figcaption>Torque, one cylinder<span class="unit">N&middot;m</span></figcaption>
+    <canvas id="chart-torque" height="150"></canvas>
+  </figure>
+</footer>
+
+<div id="toast" class="toast"></div>
+
+<script src="/static/vendor/three.min.js"></script>
+<script src="/static/vendor/OrbitControls.js"></script>
+<script src="/static/app.js"></script>
+</body>
+</html>
