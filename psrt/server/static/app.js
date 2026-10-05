@@ -289,7 +289,19 @@ const MATERIALS = {
   sleeve: { color: 0x7d838c, metalness: 0.3, roughness: 0.7,
             transparent: true, opacity: 0.13, side: THREE.DoubleSide,
             depthWrite: false },
+  // The rail rod's six parts, told apart by colour: steel rails, the
+  // lightweight sleeve as a translucent core, the big end in two tones so
+  // the receiver and the clamps read as separate pieces.
+  rr_rails: { color: 0xa7adb5, metalness: 0.8, roughness: 0.3 },
+  rr_sleeve: { color: 0x3f7f5f, metalness: 0.1, roughness: 0.8,
+               transparent: true, opacity: 0.55 },
+  rr_receiver: { color: 0xc49a6c, metalness: 0.6, roughness: 0.35 },
+  rr_clamp_right: { color: 0x6f8fd1, metalness: 0.6, roughness: 0.35 },
+  rr_clamp_left: { color: 0x8b76d1, metalness: 0.6, roughness: 0.35 },
+  rr_bolt: { color: 0xd06a5a, metalness: 0.8, roughness: 0.3 },
 };
+const RAIL_PARTS = ['rr_rails', 'rr_sleeve', 'rr_receiver', 'rr_clamp_right',
+  'rr_clamp_left', 'rr_bolt'];
 
 function initScene() {
   const host = $('viewport');
@@ -388,6 +400,8 @@ async function loadGeometry() {
  * millimetres above it, and the first thing you see is the inside of the
  * sleeve. */
 function frameAssembly() {
+  if (S.framed) return;                // keep the user's view on a rebuild
+  S.framed = true;
   const box = new THREE.Box3();
   for (const [part, mesh] of Object.entries(S.meshes)) {
     if (part === 'sleeve') continue;            // the sleeve is the tall one
@@ -434,8 +448,28 @@ function placeParts() {
 
   S.meshes.piston.position.set(0, 0, s.piston_translate_mm[i] + burst * 70);
   S.meshes.pin.position.set(0, burst * 90, s.pin_z_mm[i]);
-  S.meshes.rod.position.set(0, 0, s.pin_z_mm[i] - burst * 35);
-  S.meshes.rod.rotation.y = s.rod_rotation_y[i];
+  if (S.meshes.rod) {
+    S.meshes.rod.position.set(0, 0, s.pin_z_mm[i] - burst * 35);
+    S.meshes.rod.rotation.y = s.rod_rotation_y[i];
+  }
+  // The rail rod's parts share the conventional rod's frame, so they ride
+  // the same transform. Exploded, they separate along the rod's own axis.
+  const spread = { rr_rails: 0, rr_sleeve: -25, rr_receiver: 30,
+    rr_clamp_right: 55, rr_clamp_left: 55, rr_bolt: 80 };
+  for (const part of RAIL_PARTS) {
+    const m = S.meshes[part];
+    if (!m) continue;
+    const ry = s.rod_rotation_y[i];
+    const d = burst * (spread[part] - 35);
+    // offset along the rod axis: the rod frame's +z, turned by ry about Y
+    m.position.set(Math.sin(ry) * d, 0, s.pin_z_mm[i] + Math.cos(ry) * d);
+    if (burst && (part === 'rr_clamp_right' || part === 'rr_clamp_left')) {
+      const side = part === 'rr_clamp_right' ? 1 : -1;
+      m.position.x += Math.cos(ry) * side * 25;
+      m.position.z -= Math.sin(ry) * side * 25;
+    }
+    m.rotation.y = ry;
+  }
   if (S.meshes.sleeve) S.meshes.sleeve.position.set(0, 0, s.sleeve_translate_mm);
 
   if (S.showForces) {
@@ -471,6 +505,7 @@ function setCrankIndex(i, fromPlayback) {
   if (!fromPlayback) placeParts(); else placeParts();
   if (!fromPlayback || i % 3 === 0) drawCharts();
   if (fromPlayback) $('crank').value = String(i);
+  if (window.onCrankChange) window.onCrankChange(i, fromPlayback);
   // The stress field follows the slider. One solve covers the whole cycle
   // because the analysis is linear, so this is a multiply per vertex.
   if (S.fea && S.fea.data.cycle) {
@@ -637,6 +672,8 @@ async function initChat() {
     if (!b) return;
     [...e.currentTarget.children].forEach((c) => c.classList.toggle('on', c === b));
     $('tab-margins').hidden = b.dataset.tab !== 'margins';
+    $('tab-railrod').hidden = b.dataset.tab !== 'railrod';
+    if (b.dataset.tab === 'railrod' && window.showRailRod) window.showRailRod();
     $('tab-optimise').hidden = b.dataset.tab !== 'optimise';
     $('tab-assistant').hidden = b.dataset.tab !== 'assistant';
     if (b.dataset.tab === 'assistant') $('chat-text').focus();
@@ -894,6 +931,16 @@ async function refresh() {
 
   renderEnvelope(envelope);
   renderRail(state);
+  // The solids follow the design. Anything that changes a part's shape
+  // changes the geometry fingerprint, and the viewport rebuilds rather than
+  // keep drawing parts that no longer exist.
+  if (S.geometryFingerprint !== undefined
+      && state.geometry_fingerprint !== S.geometryFingerprint) {
+    S.geometryFingerprint = state.geometry_fingerprint;
+    loadGeometry();
+  }
+  S.geometryFingerprint = state.geometry_fingerprint;
+  if (window.onRefresh) window.onRefresh(state);
   renderMargins(margins);
   $('rpm').value = Math.round(sweep.rpm);
   $('crank').max = String(sweep.theta_deg.length - 1);
@@ -1183,6 +1230,10 @@ function clearFea() {
     S.group.add(S.fea.original);
     S.meshes[S.fea.part] = S.fea.original;
   }
+  if (S.fea.rail) {
+    $('fea-mode').innerHTML = '<option value="distribution">distribution</option>'
+      + '<option value="yield">vs yield</option>';
+  }
   S.fea = null;
   markFeaButton(null);
   $('fea-legend').hidden = true;
@@ -1223,6 +1274,7 @@ function wire() {
   });
   $('fea-clear').addEventListener('click', clearFea);
   $('fea-mode').addEventListener('change', (e) => {
+    if (S.fea && S.fea.rail) { window.repaintRailFea(); return; }
     if (S.fea) paintStress(e.target.value);
   });
 }

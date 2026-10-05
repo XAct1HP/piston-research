@@ -1,0 +1,1593 @@
+{
+  "schema_version": 1,
+  "units": "SI",
+  "meta": {
+    "name": "GM LS3 6.2L V8 -- rail connecting rod",
+    "notes": "The LS3 load environment with the conventional I-beam rod replaced by the rail rod concept: monolithic small end + twin steel rails, stabilising sleeve, big-end receiver, two swing clamps hooked into radiused rail notches, one tangential bolt. Every rail-rod dimension is a starting point, not a validated design.",
+    "provenance": "bore, stroke, rod length, bore spacing and compression ratio are published LS3 figures; all masses and the breathing calibration are estimates and must be replaced with measurements before any margin computed from them is trusted. Pin and rod section dimensions are reverse-engineered from published part weights and the journal size: they are self-consistent, not measured. All masses are now MEASURED from those solids rather than entered, so the design is internally consistent; the rod mass in particular disagrees with a commonly quoted figure and the geometry is believed over it"
+  },
+  "engine": {
+    "bore": {
+      "v": 0.103251,
+      "class": "bounded",
+      "unit": "m",
+      "min": 0.103251,
+      "max": 0.103505,
+      "why_min": "subtractive manufacturing only: material comes off the block, never on, so the bore cannot go below the as-built 103.25 mm",
+      "why_max": "aftermarket piston availability: pistons are sold up to 103.50 mm (+0.25 mm over), so that overbore is established practice on this block",
+      "description": "Cylinder bore diameter",
+      "source": "published"
+    },
+    "stroke": {
+      "v": 0.092,
+      "class": "free",
+      "unit": "m",
+      "description": "Crankshaft stroke",
+      "source": "published"
+    },
+    "rod_length": {
+      "v": 0.154051,
+      "class": "free",
+      "unit": "m",
+      "description": "Connecting rod centre-to-centre length",
+      "source": "published"
+    },
+    "n_cylinders": {
+      "v": 8,
+      "class": "free",
+      "unit": "-",
+      "description": "Number of cylinders",
+      "source": "published"
+    },
+    "compression_ratio": {
+      "v": 10.7,
+      "class": "bounded",
+      "unit": "-",
+      "min": 6.0,
+      "max": 14.0,
+      "why_max": "knock limit on pump fuel; raise only with the fuel and boost level accounted for",
+      "description": "Geometric compression ratio",
+      "source": "published"
+    },
+    "redline": {
+      "v": 691.1503837897545,
+      "class": "free",
+      "unit": "rad/s",
+      "description": "Maximum engine speed",
+      "source": "published"
+    },
+    "crank_radius": {
+      "v": null,
+      "class": "derived",
+      "unit": "m",
+      "description": "Half the stroke"
+    },
+    "bore_area": {
+      "v": null,
+      "class": "derived",
+      "unit": "m^2",
+      "description": "Piston crown area exposed to gas"
+    },
+    "displacement_cyl": {
+      "v": null,
+      "class": "derived",
+      "unit": "m^3",
+      "description": "Swept volume per cylinder"
+    },
+    "displacement_total": {
+      "v": null,
+      "class": "derived",
+      "unit": "m^3",
+      "description": "Total swept volume"
+    },
+    "clearance_volume": {
+      "v": null,
+      "class": "derived",
+      "unit": "m^3",
+      "description": "Volume above the piston at TDC"
+    },
+    "rod_ratio": {
+      "v": null,
+      "class": "derived",
+      "unit": "-",
+      "description": "Rod length / crank radius"
+    },
+    "mean_piston_speed": {
+      "v": null,
+      "class": "derived",
+      "unit": "m/s",
+      "description": "Mean piston speed at the current operating point"
+    }
+  },
+  "operating": {
+    "speed": {
+      "v": 481.71087355043494,
+      "class": "free",
+      "unit": "rad/s",
+      "description": "Engine speed at the operating point"
+    },
+    "intake_pressure": {
+      "v": 99000.0,
+      "class": "free",
+      "unit": "Pa",
+      "description": "Manifold pressure at IVC (in-cylinder)",
+      "source": "estimated"
+    },
+    "intake_temperature": {
+      "v": 325.0,
+      "class": "free",
+      "unit": "K",
+      "description": "Charge temperature at IVC",
+      "source": "estimated"
+    },
+    "crankcase_pressure": {
+      "v": 101325.0,
+      "class": "free",
+      "unit": "Pa",
+      "description": "Pressure under the piston; opposes gas force"
+    },
+    "exhaust_pressure": {
+      "v": 110000.0,
+      "class": "free",
+      "unit": "Pa",
+      "description": "Cylinder pressure during the exhaust stroke"
+    },
+    "afr": {
+      "v": 14.7,
+      "class": "free",
+      "unit": "-",
+      "description": "Air-fuel ratio by mass"
+    },
+    "fuel_lhv": {
+      "v": 44000000.0,
+      "class": "free",
+      "unit": "J/kg",
+      "description": "Lower heating value of the fuel (gasoline ~44 MJ/kg)"
+    },
+    "combustion_efficiency": {
+      "v": 0.97,
+      "class": "bounded",
+      "unit": "-",
+      "min": 0.5,
+      "max": 1.0,
+      "description": "Fraction of fuel energy actually released"
+    },
+    "heat_loss_fraction": {
+      "v": 0.12,
+      "class": "bounded",
+      "unit": "-",
+      "min": 0.0,
+      "max": 0.5,
+      "description": "Share of released heat lost to the walls during the closed period. A lumped stand-in for a real heat transfer model -- see the limits section",
+      "source": "estimated"
+    },
+    "ve_peak": {
+      "v": 1.0,
+      "class": "bounded",
+      "unit": "-",
+      "min": 0.2,
+      "max": 1.4,
+      "description": "Peak volumetric efficiency. Above 1.0 means the intake is tuned or boosted",
+      "source": "estimated"
+    },
+    "ve_peak_speed": {
+      "v": 481.71087355043494,
+      "class": "free",
+      "unit": "rad/s",
+      "description": "Engine speed at which volumetric efficiency peaks",
+      "source": "estimated"
+    },
+    "ve_breadth": {
+      "v": 0.75,
+      "class": "bounded",
+      "unit": "-",
+      "min": 0.0,
+      "max": 3.0,
+      "description": "How sharply VE falls away from its peak. Small means a broad flat curve, large means a peaky one",
+      "source": "estimated"
+    },
+    "ivc_angle": {
+      "v": -2.443460952792061,
+      "class": "free",
+      "unit": "rad",
+      "description": "Intake valve closing; start of the closed period"
+    },
+    "evo_angle": {
+      "v": 2.2689280275926285,
+      "class": "free",
+      "unit": "rad",
+      "description": "Exhaust valve opening; end of the closed period"
+    },
+    "soc_angle": {
+      "v": -0.3141592653589793,
+      "class": "free",
+      "unit": "rad",
+      "description": "Start of combustion (start of heat release)",
+      "source": "estimated"
+    },
+    "burn_duration": {
+      "v": 0.8377580409572782,
+      "class": "bounded",
+      "unit": "rad",
+      "min": 0.17453292519943295,
+      "max": 2.0943951023931953,
+      "description": "Crank angle for 0 to ~100% mass fraction burned",
+      "source": "estimated"
+    },
+    "wiebe_a": {
+      "v": 6.908,
+      "class": "free",
+      "unit": "-",
+      "description": "Wiebe efficiency parameter; 6.908 gives 99.9% burned at the end of the stated duration"
+    },
+    "wiebe_m": {
+      "v": 2.0,
+      "class": "free",
+      "unit": "-",
+      "description": "Wiebe form factor; 2 is typical for SI engines"
+    },
+    "fmep_constant": {
+      "v": 30000.0,
+      "class": "free",
+      "unit": "Pa",
+      "description": "Chen-Flynn constant term: accessory and valvetrain drag that does not scale with load or speed",
+      "source": "estimated"
+    },
+    "fmep_load_coeff": {
+      "v": 0.008,
+      "class": "free",
+      "unit": "-",
+      "description": "Chen-Flynn load term, multiplying peak cylinder pressure. Covers ring and bearing friction rising with gas load",
+      "source": "estimated"
+    },
+    "fmep_speed_coeff": {
+      "v": 800.0,
+      "class": "free",
+      "unit": "Pa.s/m",
+      "description": "Chen-Flynn linear speed term (hydrodynamic friction)",
+      "source": "estimated"
+    },
+    "fmep_speed2_coeff": {
+      "v": 120.0,
+      "class": "free",
+      "unit": "Pa.s^2/m^2",
+      "description": "Chen-Flynn quadratic speed term (windage, pumping)",
+      "source": "estimated"
+    },
+    "volumetric_efficiency": {
+      "v": null,
+      "class": "derived",
+      "unit": "-",
+      "description": "VE at the current speed, from the calibration curve"
+    },
+    "trapped_mass": {
+      "v": null,
+      "class": "derived",
+      "unit": "kg",
+      "description": "Charge mass sealed at IVC"
+    },
+    "trapped_pressure": {
+      "v": null,
+      "class": "derived",
+      "unit": "Pa",
+      "description": "Cylinder pressure at IVC implied by the trapped mass"
+    },
+    "gamma": {
+      "v": 1.32,
+      "class": "bounded",
+      "unit": "-",
+      "min": 1.2,
+      "max": 1.4,
+      "description": "Ratio of specific heats used over the closed period. Below the cold-air 1.4 to account for hot burned gas",
+      "source": "estimated"
+    }
+  },
+  "masses": {
+    "piston": {
+      "v": 0.43547977181638553,
+      "class": "free",
+      "unit": "kg",
+      "description": "Bare piston. Measured from the CadQuery solid, so the default state is self-consistent with its own geometry",
+      "source": "estimated"
+    },
+    "rings": {
+      "v": 0.036,
+      "class": "free",
+      "unit": "kg",
+      "description": "Full ring pack",
+      "source": "estimated"
+    },
+    "pin": {
+      "v": 0.11668404095821748,
+      "class": "free",
+      "unit": "kg",
+      "description": "Gudgeon pin, measured from the solid",
+      "source": "estimated"
+    },
+    "retainers": {
+      "v": 0.0,
+      "class": "free",
+      "unit": "kg",
+      "description": "Circlips or other pin retainers",
+      "source": "estimated"
+    },
+    "rod_total": {
+      "v": 0.6416475099312696,
+      "class": "free",
+      "unit": "kg",
+      "description": "Connecting rod complete with cap, bolts and bearings, measured from the solid plus rod.hardware_mass",
+      "source": "estimated"
+    },
+    "rod_cg_from_small_end": {
+      "v": 0.10140468968612162,
+      "class": "free",
+      "unit": "m",
+      "description": "Rod centre of mass from the small-end centre, measured from the solid rather than assumed. It lands at 0.700 of rod length here, which is where the usual rule of thumb puts it -- but only once the shank taper and the bolt bosses are modelled. Without them the solid says 0.62, and that error would land straight in reciprocating mass",
+      "source": "estimated"
+    },
+    "piston_assembly": {
+      "v": null,
+      "class": "derived",
+      "unit": "kg",
+      "description": "Piston + rings + pin + retainers"
+    },
+    "rod_reciprocating": {
+      "v": null,
+      "class": "derived",
+      "unit": "kg",
+      "description": "Rod mass acting at the small end"
+    },
+    "rod_rotating": {
+      "v": null,
+      "class": "derived",
+      "unit": "kg",
+      "description": "Rod mass acting at the crankpin"
+    },
+    "reciprocating": {
+      "v": null,
+      "class": "derived",
+      "unit": "kg",
+      "description": "Total reciprocating mass per cylinder"
+    }
+  },
+  "materials": {
+    "piston": {
+      "v": "A390-T6",
+      "class": "free",
+      "description": "Piston material key",
+      "source": "estimated"
+    },
+    "pin": {
+      "v": "4340",
+      "class": "free",
+      "description": "Gudgeon pin material",
+      "source": "estimated"
+    },
+    "rod": {
+      "v": "4340",
+      "class": "free",
+      "description": "Connecting rod material",
+      "source": "estimated"
+    },
+    "sleeve": {
+      "v": "grey-iron",
+      "class": "free",
+      "description": "Cylinder liner material",
+      "source": "published"
+    }
+  },
+  "block": {
+    "as_built_bore": {
+      "v": 0.103251,
+      "class": "locked",
+      "unit": "m",
+      "why": "the block exists; the bore cannot be made smaller without resleeving",
+      "description": "Bore diameter as the block was manufactured",
+      "source": "published"
+    },
+    "bore_spacing": {
+      "v": 0.11176,
+      "class": "locked",
+      "unit": "m",
+      "why": "4.400 in bore spacing, fixed by the LS block casting",
+      "description": "Cylinder centre-to-centre distance",
+      "source": "published"
+    },
+    "min_wall_to_coolant": {
+      "v": 0.004,
+      "class": "bounded",
+      "unit": "m",
+      "min": 0.0025,
+      "why_min": "below about 2.5 mm the wall distorts badly under head bolt clamping and cooling becomes unreliable",
+      "description": "Minimum acceptable bore wall thickness",
+      "source": "estimated"
+    },
+    "siamesed": {
+      "v": false,
+      "class": "free",
+      "description": "True if adjacent bores share a wall with no coolant passage between them"
+    },
+    "liner_type": {
+      "v": "cast-in-iron",
+      "class": "free",
+      "description": "Thin iron liners cast into the aluminium block during casting -- the reason this block overbores so little",
+      "source": "published"
+    },
+    "bore_profile": {
+      "v": "circle",
+      "class": "free",
+      "description": "Bore cross-section: 'circle', 'polygon-N' or 'oval-R'. Only a circle can be sealed by piston rings; the others exist so the comparison can be computed rather than asserted"
+    },
+    "resleeving_allowed": {
+      "v": false,
+      "class": "free",
+      "description": "If true, the bore may exceed the subtractive envelope because a thicker sleeve will be pressed in"
+    },
+    "catalogue_max_bore": {
+      "v": 0.103505,
+      "class": "free",
+      "unit": "m",
+      "why": "4.075 in. Forged LS3/L92 pistons are catalogued at this bore by Wiseco, Mahle, Manley and JE, so +0.010 in. over the 4.065 in. stock bore is established practice rather than an inference. Nobody sells a larger one for this block.",
+      "description": "Largest bore an aftermarket piston is sold for",
+      "source": "catalogue"
+    },
+    "min_liner_wall": {
+      "v": 0.0015,
+      "class": "bounded",
+      "unit": "m",
+      "min": 0.0008,
+      "why_min": "below about 0.8 mm a cast-in iron liner will not stay round under thermal load and can collapse into the coolant jacket",
+      "description": "Minimum liner wall thickness to leave after boring",
+      "source": "estimated"
+    },
+    "deck_height": {
+      "v": null,
+      "class": "locked",
+      "unit": "m",
+      "why": "fixed by the block casting",
+      "description": "Crank centreline to deck face",
+      "source": "published",
+      "optional": true
+    },
+    "liner_thickness": {
+      "v": null,
+      "class": "free",
+      "unit": "m",
+      "description": "Wall thickness of a cast-in or pressed-in liner. Boring eats into this before it reaches the parent block material",
+      "source": "estimated",
+      "optional": true
+    },
+    "min_siamesed_web": {
+      "v": 0.0025,
+      "class": "bounded",
+      "unit": "m",
+      "min": 0.0015,
+      "why_min": "a siamesed web carries head clamping load with no coolant behind it; thinner than about 1.5 mm and it cracks between the bores",
+      "description": "Minimum web between siamesed bores",
+      "source": "estimated"
+    },
+    "gallery_offset": {
+      "v": null,
+      "class": "free",
+      "unit": "m",
+      "description": "Bore centre to the near wall of the main oil gallery or a drainback. Not published -- sonic testing or a sectioned block",
+      "source": "estimated",
+      "optional": true
+    },
+    "min_wall_to_gallery": {
+      "v": 0.003,
+      "class": "bounded",
+      "unit": "m",
+      "min": 0.002,
+      "why_min": "breaking into an oil gallery scraps the block",
+      "description": "Minimum material between bore and oil gallery",
+      "source": "estimated"
+    },
+    "head_bolt_offset": {
+      "v": null,
+      "class": "free",
+      "unit": "m",
+      "description": "Bore centre to the near edge of a head bolt boss",
+      "source": "estimated",
+      "optional": true
+    },
+    "min_wall_to_head_bolt": {
+      "v": 0.003,
+      "class": "bounded",
+      "unit": "m",
+      "min": 0.002,
+      "why_min": "the boss carries clamping load straight into the deck; too little material and the bore distorts under torque",
+      "description": "Minimum material between bore and head bolt boss",
+      "source": "estimated"
+    },
+    "min_sleeve_to_sleeve": {
+      "v": 0.0005,
+      "class": "bounded",
+      "unit": "m",
+      "min": 0.0,
+      "why_min": "interlocking sleeves may touch: at that point the sleeves themselves are the structure between the bores and the parent metal between them is gone",
+      "description": "Minimum gap between adjacent sleeve outside diameters when resleeved",
+      "source": "estimated"
+    },
+    "min_wall_when_sleeved": {
+      "v": 0.0015,
+      "class": "bounded",
+      "unit": "m",
+      "min": 0.0008,
+      "why_min": "a pressed-in ductile iron sleeve carries the load the parent wall used to, but the parent metal still has to hold the sleeve",
+      "description": "Minimum parent-block wall to retain around a sleeve. Smaller than the unsleeved minimum, which is the point of sleeving",
+      "source": "estimated"
+    },
+    "replacement_sleeve_wall": {
+      "v": 0.003,
+      "class": "bounded",
+      "unit": "m",
+      "min": 0.002,
+      "why_min": "a pressed-in ductile iron sleeve thinner than about 2 mm distorts when it is pressed and will not hold round",
+      "description": "Wall thickness of the sleeve used when resleeving",
+      "source": "estimated"
+    }
+  },
+  "constraints": {
+    "mass_ceiling_reciprocating": {
+      "v": null,
+      "class": "free",
+      "unit": "kg",
+      "description": "Optional ceiling on reciprocating mass per cylinder",
+      "optional": true
+    },
+    "min_safety_factor": {
+      "v": 1.5,
+      "class": "free",
+      "unit": "-",
+      "description": "Minimum acceptable safety factor on any component"
+    }
+  },
+  "sleeve": {
+    "wall_thickness_measured": {
+      "v": null,
+      "class": "free",
+      "unit": "m",
+      "description": "Measured bore wall thickness at its thinnest point. Set this from a sonic test; until then the tool falls back to a bore-spacing estimate",
+      "source": "measured",
+      "optional": true
+    },
+    "wall_thickness": {
+      "v": null,
+      "class": "derived",
+      "unit": "m",
+      "description": "Bore wall thickness used for the hoop stress model"
+    },
+    "outer_diameter": {
+      "v": null,
+      "class": "derived",
+      "unit": "m",
+      "description": "Outside diameter of the liner"
+    }
+  },
+  "piston": {
+    "crown_thickness": {
+      "v": 0.0065,
+      "class": "bounded",
+      "unit": "m",
+      "min": 0.0025,
+      "why_min": "below about 2.5 mm a crown cannot carry peak firing pressure or conduct its own heat away",
+      "description": "Crown thickness at its thinnest section",
+      "source": "estimated"
+    },
+    "crown_support_radius_fraction": {
+      "v": 0.3,
+      "class": "bounded",
+      "unit": "-",
+      "min": 0.2,
+      "max": 1.0,
+      "description": "Largest unsupported crown radius, as a fraction of the bore radius. A real crown is braced underneath by the pin bosses and around its rim by the ring belt, so it spans far less than the full bore. THIS IS THE BIGGEST APPROXIMATION IN THE CROWN MODEL: the stress scales with its square, and the default was CALIBRATED so that a production piston sits just above its fatigue limit at redline, not derived from anything. Only FEA on real geometry settles it",
+      "source": "estimated"
+    },
+    "thermal_constraint_factor": {
+      "v": 0.6,
+      "class": "bounded",
+      "unit": "-",
+      "min": 0.0,
+      "max": 1.0,
+      "description": "Fraction of free thermal expansion the crown is actually restrained from making. Drives the thermal-fatigue estimate almost single-handedly",
+      "source": "estimated"
+    },
+    "skirt_length": {
+      "v": 0.0266,
+      "class": "free",
+      "unit": "m",
+      "max": 0.0266,
+      "why": "capped at the skirt the geometry actually has: 44.0 mm total height less the 17.4 mm ring belt. Was 30.0 mm, which was longer than the panel it was supposed to be measuring",
+      "why_max": "the skirt panel is only 26.60 mm long (44.0 mm total height less the 17.4 mm ring belt); the bearing length cannot exceed it",
+      "description": "Axial length of the skirt",
+      "source": "estimated"
+    },
+    "skirt_bearing_arc": {
+      "v": 1.0,
+      "class": "bounded",
+      "unit": "-",
+      "min": 0.1,
+      "max": 1.0,
+      "description": "Fraction of the full projected area that bears. The standard convention for skirt specific pressure uses the whole projected area, skirt length x bore, the same way journal bearing pressure is defined -- so 1.0 matches published allowables. Reduce it only if you also reduce the allowable to match",
+      "source": "estimated"
+    },
+    "top_land_height": {
+      "v": 0.005,
+      "class": "bounded",
+      "unit": "m",
+      "min": 0.0025,
+      "why_min": "a shorter top land cracks under peak pressure and runs too hot",
+      "description": "Axial height from the crown face to the top ring groove",
+      "source": "estimated"
+    },
+    "ring_groove_depth": {
+      "v": 0.0035,
+      "class": "free",
+      "unit": "m",
+      "description": "Radial depth of the top ring groove",
+      "source": "estimated"
+    },
+    "ring_axial_height": {
+      "v": 0.0012,
+      "class": "free",
+      "unit": "m",
+      "description": "Axial height of the top ring"
+    },
+    "boss_inner_span": {
+      "v": 0.024,
+      "class": "free",
+      "unit": "m",
+      "description": "Clear gap between the two pin bosses; the rod small end runs in it",
+      "source": "estimated"
+    },
+    "allowable_skirt_pressure": {
+      "v": 2500000.0,
+      "class": "free",
+      "unit": "Pa",
+      "description": "Specific pressure at which the skirt starts to scuff, on the full-projected-area convention. Published practice spans roughly 1.5 to 3 MPa depending on skirt coating, oil and bore finish: a band, not a sharp limit",
+      "source": "estimated"
+    },
+    "allowable_groove_pressure": {
+      "v": 35000000.0,
+      "class": "free",
+      "unit": "Pa",
+      "description": "Groove flank pressure an aluminium piston tolerates before the groove starts to pound out",
+      "source": "estimated"
+    },
+    "compression_height": {
+      "v": 0.028194,
+      "class": "free",
+      "unit": "m",
+      "description": "Crown face to pin centre. With rod length and crank radius this fixes where the crown sits at TDC",
+      "source": "published"
+    },
+    "total_height": {
+      "v": 0.044,
+      "class": "free",
+      "unit": "m",
+      "description": "Crown face to the bottom of the skirt",
+      "source": "estimated"
+    },
+    "wall_thickness": {
+      "v": 0.003,
+      "class": "bounded",
+      "unit": "m",
+      "min": 0.0012,
+      "why_min": "below about 1.2 mm the ring belt wall cannot be cast or machined reliably",
+      "description": "Radial wall from the ring groove root inward to the under-crown cavity",
+      "source": "estimated"
+    },
+    "second_land_height": {
+      "v": 0.0035,
+      "class": "free",
+      "unit": "m",
+      "description": "Height of the lands between the ring grooves",
+      "source": "estimated"
+    },
+    "oil_ring_height": {
+      "v": 0.003,
+      "class": "free",
+      "unit": "m",
+      "description": "Axial height of the oil ring groove",
+      "source": "estimated"
+    },
+    "oil_groove_depth": {
+      "v": 0.004,
+      "class": "free",
+      "unit": "m",
+      "description": "Radial depth of the oil ring groove",
+      "source": "estimated"
+    },
+    "crown_dish_volume": {
+      "v": 0.0,
+      "class": "free",
+      "unit": "m^3",
+      "description": "Volume cut out of the crown face. Positive dishes the crown and lowers compression ratio; zero is flat"
+    },
+    "boss_width_factor": {
+      "v": 2.4,
+      "class": "bounded",
+      "unit": "-",
+      "min": 1.3,
+      "max": 6.0,
+      "description": "Width of the pin boss pad across the thrust axis, as a multiple of pin diameter. Wider spreads the boss bore pressure and costs reciprocating mass"
+    },
+    "skirt_width_fraction": {
+      "v": 0.6,
+      "class": "bounded",
+      "unit": "-",
+      "min": 0.3,
+      "max": 1.0,
+      "description": "Width of the skirt across the thrust faces, as a fraction of the bore. Material outside it is relieved at the pin-axis ends. Distinct from skirt_bearing_arc, which is a pressure convention",
+      "source": "estimated"
+    },
+    "cold_clearance": {
+      "v": 6e-05,
+      "class": "free",
+      "unit": "m",
+      "description": "Diametral piston-to-bore clearance when cold"
+    },
+    "ring_belt_height": {
+      "v": null,
+      "class": "derived",
+      "unit": "m",
+      "description": "Crown face to the bottom of the oil ring groove"
+    },
+    "ring_groove_root_diameter": {
+      "v": null,
+      "class": "derived",
+      "unit": "m",
+      "description": "Diameter at the bottom of the groove"
+    },
+    "skirt_bearing_area": {
+      "v": null,
+      "class": "derived",
+      "unit": "m^2",
+      "description": "Projected area of one skirt face"
+    }
+  },
+  "pin": {
+    "outer_diameter": {
+      "v": 0.02395,
+      "class": "free",
+      "unit": "m",
+      "description": "Gudgeon pin outside diameter",
+      "source": "published"
+    },
+    "inner_diameter": {
+      "v": 0.0166,
+      "class": "bounded",
+      "unit": "m",
+      "min": 0.0,
+      "description": "Pin bore. Bigger saves reciprocating mass and costs bending stiffness -- the classic piston trade",
+      "source": "estimated"
+    },
+    "length": {
+      "v": 0.0635,
+      "class": "free",
+      "unit": "m",
+      "description": "Overall pin length",
+      "source": "estimated"
+    },
+    "support_span_factor": {
+      "v": 0.5,
+      "class": "bounded",
+      "unit": "-",
+      "min": 0.0,
+      "max": 1.0,
+      "description": "Where the boss reaction acts, between the boss inner edge (0.0) and the boss centroid (1.0). Real boss pressure peaks near the inner edge but is not concentrated there, so the truth is in between. Like the crown support radius, this was calibrated so that a production pin passes, and only FEA settles it",
+      "source": "estimated"
+    },
+    "max_ovality": {
+      "v": 7e-05,
+      "class": "free",
+      "unit": "m",
+      "description": "Allowable increase in horizontal diameter under load. Beyond roughly 0.07 mm the boss bore fatigues",
+      "source": "estimated"
+    },
+    "area": {
+      "v": null,
+      "class": "derived",
+      "unit": "m^2"
+    },
+    "second_moment": {
+      "v": null,
+      "class": "derived",
+      "unit": "m^4"
+    },
+    "section_modulus": {
+      "v": null,
+      "class": "derived",
+      "unit": "m^3"
+    },
+    "bending_span": {
+      "v": null,
+      "class": "derived",
+      "unit": "m",
+      "description": "Effective support span between the pin bosses"
+    }
+  },
+  "small_end": {
+    "bushing_width": {
+      "v": 0.0235,
+      "class": "free",
+      "unit": "m",
+      "description": "Axial width of the small-end bore",
+      "source": "estimated"
+    },
+    "material": {
+      "v": "4340",
+      "class": "free",
+      "description": "Bushing material, or the rod material for a bushingless small end",
+      "source": "estimated"
+    },
+    "allowable_pressure": {
+      "v": 120000000.0,
+      "class": "free",
+      "unit": "Pa",
+      "description": "Projected specific pressure the bushing tolerates in compression",
+      "source": "estimated"
+    }
+  },
+  "rod": {
+    "shank_height": {
+      "v": 0.028,
+      "class": "free",
+      "unit": "m",
+      "description": "Section height in the plane of rotation",
+      "source": "estimated"
+    },
+    "shank_width": {
+      "v": 0.017,
+      "class": "free",
+      "unit": "m",
+      "description": "Flange width, measured along the crank axis",
+      "source": "estimated"
+    },
+    "shank_web": {
+      "v": 0.005,
+      "class": "bounded",
+      "unit": "m",
+      "min": 0.002,
+      "why_min": "a thinner web cannot be forged or machined reliably",
+      "description": "Web thickness of the I or H section",
+      "source": "estimated"
+    },
+    "shank_flange": {
+      "v": 0.0055,
+      "class": "bounded",
+      "unit": "m",
+      "min": 0.002,
+      "description": "Flange thickness",
+      "source": "estimated"
+    },
+    "shank_taper": {
+      "v": 1.25,
+      "class": "bounded",
+      "unit": "-",
+      "min": 1.0,
+      "max": 2.0,
+      "description": "How much larger the shank section is at the big end than at the small end. The shank_* dimensions describe the MINIMUM section, which is what the tension and buckling checks use",
+      "source": "estimated"
+    },
+    "k_in_plane": {
+      "v": 1.0,
+      "class": "free",
+      "unit": "-",
+      "description": "Effective-length factor for buckling in the plane of rotation. 1.0 = pinned at both ends, which is what the pin and crankpin actually provide",
+      "source": "estimated"
+    },
+    "k_out_of_plane": {
+      "v": 0.6,
+      "class": "free",
+      "unit": "-",
+      "description": "Effective-length factor out of plane, where the pin bosses and big end restrain rotation",
+      "source": "estimated"
+    },
+    "small_end_outer_diameter": {
+      "v": 0.031,
+      "class": "free",
+      "unit": "m",
+      "description": "Outside diameter of the small end",
+      "source": "estimated"
+    },
+    "big_end_outer_diameter": {
+      "v": 0.065,
+      "class": "free",
+      "unit": "m",
+      "description": "Outside diameter of the big end",
+      "source": "estimated"
+    },
+    "big_end_bore": {
+      "v": 0.05334,
+      "class": "free",
+      "unit": "m",
+      "description": "Big-end bore diameter",
+      "source": "published"
+    },
+    "big_end_width": {
+      "v": 0.02,
+      "class": "free",
+      "unit": "m",
+      "description": "Big-end bearing width",
+      "source": "estimated"
+    },
+    "bearing_clearance": {
+      "v": 4e-05,
+      "class": "free",
+      "unit": "m",
+      "description": "Radial running clearance of the big-end bearing",
+      "source": "estimated"
+    },
+    "allowable_bearing_pressure": {
+      "v": 60000000.0,
+      "class": "free",
+      "unit": "Pa",
+      "description": "Projected specific pressure for a trimetal shell",
+      "source": "estimated"
+    },
+    "oil_viscosity": {
+      "v": 0.008,
+      "class": "free",
+      "unit": "Pa.s",
+      "description": "Dynamic viscosity at bearing temperature",
+      "source": "estimated"
+    },
+    "surface_finish": {
+      "v": "machined",
+      "class": "free",
+      "description": "polished | ground | machined | hot-rolled | as-forged",
+      "source": "estimated"
+    },
+    "hardware_mass": {
+      "v": 0.045,
+      "class": "free",
+      "unit": "kg",
+      "description": "Rod bolts, bearing shells and cap features the solid model does not carry. Treated as lumped at the big end centre, which is where they sit",
+      "source": "estimated"
+    },
+    "shank_area": {
+      "v": null,
+      "class": "derived",
+      "unit": "m^2"
+    },
+    "shank_i_in_plane": {
+      "v": null,
+      "class": "derived",
+      "unit": "m^4"
+    },
+    "shank_i_out_of_plane": {
+      "v": null,
+      "class": "derived",
+      "unit": "m^4"
+    },
+    "slenderness_in_plane": {
+      "v": null,
+      "class": "derived",
+      "unit": "-"
+    },
+    "slenderness_out_of_plane": {
+      "v": null,
+      "class": "derived",
+      "unit": "-"
+    }
+  },
+  "bolts": {
+    "count": {
+      "v": 2,
+      "class": "free",
+      "unit": "-",
+      "description": "Rod bolts per rod",
+      "source": "published"
+    },
+    "thread_diameter": {
+      "v": 0.009,
+      "class": "free",
+      "unit": "m",
+      "source": "published"
+    },
+    "thread_pitch": {
+      "v": 0.001,
+      "class": "free",
+      "unit": "m",
+      "source": "estimated"
+    },
+    "preload": {
+      "v": 35000.0,
+      "class": "free",
+      "unit": "N",
+      "description": "Assembly preload per bolt",
+      "source": "estimated"
+    },
+    "joint_stiffness_factor": {
+      "v": 0.25,
+      "class": "bounded",
+      "unit": "-",
+      "min": 0.05,
+      "max": 0.8,
+      "description": "Share of the external load the bolt takes. 0.2 to 0.3 for a stiff rod joint",
+      "source": "estimated"
+    },
+    "proof_strength": {
+      "v": 1100000000.0,
+      "class": "free",
+      "unit": "Pa",
+      "description": "Bolt proof strength",
+      "source": "estimated"
+    },
+    "material": {
+      "v": "300M",
+      "class": "free"
+    },
+    "surface_finish": {
+      "v": "ground",
+      "class": "free",
+      "description": "Rolled threads behave better than this suggests; the benefit is not credited"
+    },
+    "cap_mass": {
+      "v": 0.15,
+      "class": "free",
+      "unit": "kg",
+      "description": "Rod cap plus its bearing shell. Its centrifugal force adds to the bolt load at TDC",
+      "source": "estimated"
+    },
+    "stress_area": {
+      "v": null,
+      "class": "derived",
+      "unit": "m^2"
+    }
+  },
+  "thermal": {
+    "coolant_temperature": {
+      "v": 368.15,
+      "class": "free",
+      "unit": "K",
+      "description": "Coolant temperature (95 C)"
+    },
+    "oil_temperature": {
+      "v": 383.15,
+      "class": "free",
+      "unit": "K",
+      "description": "Oil temperature (110 C)"
+    },
+    "crown_heat_share": {
+      "v": 0.3,
+      "class": "bounded",
+      "unit": "-",
+      "min": 0.05,
+      "max": 0.6,
+      "description": "Share of wall heat rejection that goes into the piston rather than the head or the liner",
+      "source": "estimated"
+    },
+    "conductance_rings": {
+      "v": 13.0,
+      "class": "free",
+      "unit": "W/K",
+      "description": "Piston to liner through the ring pack; the dominant path out of a piston",
+      "source": "estimated"
+    },
+    "conductance_skirt": {
+      "v": 4.3,
+      "class": "free",
+      "unit": "W/K",
+      "description": "Piston to liner through the skirt",
+      "source": "estimated"
+    },
+    "conductance_oil": {
+      "v": 5.8,
+      "class": "free",
+      "unit": "W/K",
+      "description": "Underside to oil. Raise this for a cooling jet or a gallery-cooled piston",
+      "source": "estimated"
+    }
+  },
+  "fatigue": {
+    "reliability": {
+      "v": 0.99,
+      "class": "free",
+      "unit": "-",
+      "description": "Reliability the endurance limit is corrected for"
+    },
+    "design_life_cycles": {
+      "v": 100000000.0,
+      "class": "free",
+      "unit": "-",
+      "description": "Target life. 10^8 cycles is about 480 hours at 3500 rpm for a part loaded once per revolution"
+    },
+    "kf_crown": {
+      "v": 1.8,
+      "class": "free",
+      "unit": "-",
+      "description": "Fatigue notch factor at the crown-to-wall junction",
+      "source": "estimated"
+    },
+    "kf_land": {
+      "v": 2.2,
+      "class": "free",
+      "unit": "-",
+      "description": "Notch factor at the ring groove root, a sharp corner",
+      "source": "estimated"
+    },
+    "kf_pin": {
+      "v": 1.3,
+      "class": "free",
+      "unit": "-",
+      "description": "Notch factor for the pin; a plain tube, so mild",
+      "source": "estimated"
+    },
+    "kf_rod": {
+      "v": 1.6,
+      "class": "free",
+      "unit": "-",
+      "description": "Notch factor at the shank-to-end transitions",
+      "source": "estimated"
+    },
+    "kf_bolt": {
+      "v": 3.0,
+      "class": "free",
+      "unit": "-",
+      "description": "Notch factor at the thread root. Already implicit in the bolt fatigue method, so it is reported rather than applied twice",
+      "source": "estimated"
+    }
+  },
+  "railrod": {
+    "enabled": {
+      "v": true,
+      "class": "free",
+      "description": "Use the rail connecting rod (monolithic small end + twin steel rails, stabilising sleeve, big-end receiver, two swing clamps, one tangential bolt) in place of the conventional I-beam rod"
+    },
+    "eye_outer_diameter": {
+      "v": 0.032,
+      "class": "bounded",
+      "unit": "m",
+      "min": 0.02,
+      "description": "Outside diameter of the small-end eye. Its bore is the gudgeon pin diameter and its width is small_end.bushing_width"
+    },
+    "rail_outer_span": {
+      "v": 0.028,
+      "class": "bounded",
+      "unit": "m",
+      "min": 0.01,
+      "description": "Distance between the OUTSIDE faces of the two rails. This is the strict envelope the sleeve slides over, so nothing below the eye may exceed it"
+    },
+    "rail_width": {
+      "v": 0.006,
+      "class": "bounded",
+      "unit": "m",
+      "min": 0.0025,
+      "max": 0.0135,
+      "why_min": "a rail thinner than about 2.5 mm has nothing left under its locking notch",
+      "why_max": "the two rails would meet on the rod axis",
+      "description": "Rail thickness in the plane of rotation (x). The notch is cut into this dimension"
+    },
+    "rail_depth": {
+      "v": 0.016,
+      "class": "bounded",
+      "unit": "m",
+      "min": 0.006,
+      "description": "Rail depth along the crank axis (y). Out-of-plane buckling rests almost entirely on this"
+    },
+    "eye_transition_radius": {
+      "v": 0.004,
+      "class": "bounded",
+      "unit": "m",
+      "min": 0.0005,
+      "description": "Blend radius where the rails run into the eye"
+    },
+    "notch_depth": {
+      "v": 0.0012,
+      "class": "bounded",
+      "unit": "m",
+      "min": 0.0003,
+      "max": 0.0036,
+      "why_max": "a notch deeper than 60% of the rail width leaves too little net section to carry tension",
+      "description": "Depth of the locking notch at its deepest point, measured in from the rail's outside face"
+    },
+    "notch_ramp_angle": {
+      "v": 45.0,
+      "class": "bounded",
+      "unit": "deg",
+      "min": 8.0,
+      "max": 75.0,
+      "description": "Angle of the tapered ramp from the rail axis. Steeper holds the rail with less lateral pry per newton of tension but makes a shorter, more abrupt recess"
+    },
+    "notch_top_radius": {
+      "v": 0.0018,
+      "class": "bounded",
+      "unit": "m",
+      "min": 0.0012,
+      "why_min": "the top radius must be at least the 1.20 mm notch depth, or the recess needs a step or an undercut to return to the rail face -- the concept requires a radiused transition, not a stepped pocket or a hook",
+      "description": "Radius of the deepest/top transition of the notch. It is also the clamp knob's socket, and the knob is the swing pivot. Bounded below by the notch depth: a smaller radius cannot reach back to the rail face without a step or an undercut, which the concept rules out"
+    },
+    "notch_lower_radius": {
+      "v": 0.001,
+      "class": "bounded",
+      "unit": "m",
+      "min": 0.0002,
+      "description": "Blend radius where the ramp returns to full rail width"
+    },
+    "rail_land_length": {
+      "v": 0.003,
+      "class": "bounded",
+      "unit": "m",
+      "min": 0.001,
+      "description": "Length from the rail's flat bottom face up to where the ramp would meet the full-width face. The full-width land below the notch is this less the lower blend"
+    },
+    "receiver_arc_half_angle": {
+      "v": 50.0,
+      "class": "bounded",
+      "unit": "deg",
+      "min": 25.0,
+      "max": 80.0,
+      "description": "Half the angle of crankpin bore the receiver wraps, measured from the rod axis. The swing clamps wrap the rest"
+    },
+    "receiver_floor_thickness": {
+      "v": 0.004,
+      "class": "bounded",
+      "unit": "m",
+      "min": 0.0015,
+      "description": "Thinnest material between the crankpin bore and the floor a rail seats on"
+    },
+    "receiver_tip_angle": {
+      "v": 30.0,
+      "class": "bounded",
+      "unit": "deg",
+      "min": 10.0,
+      "max": 80.0,
+      "description": "Included angle at the receiver's lower corners, between the bore and the flank. Small is a knife edge; large pushes the clamp arm outward"
+    },
+    "edge_radius": {
+      "v": 0.0006,
+      "class": "bounded",
+      "unit": "m",
+      "min": 0.0001,
+      "description": "Radius every convex corner of the receiver and the clamps is broken to"
+    },
+    "clamp_thickness": {
+      "v": 0.0065,
+      "class": "bounded",
+      "unit": "m",
+      "min": 0.0025,
+      "description": "Radial thickness of each clamp around the crankpin"
+    },
+    "arm_thickness": {
+      "v": 0.005,
+      "class": "bounded",
+      "unit": "m",
+      "min": 0.002,
+      "description": "Thickness of the clamp arm where it runs up the receiver flank to the rail"
+    },
+    "tip_clearance": {
+      "v": 5e-05,
+      "class": "bounded",
+      "unit": "m",
+      "min": 0.0,
+      "description": "Gap between the knob/flank and the rail notch they conform to. Geometric: the contact network treats the seated joint as closed"
+    },
+    "seat_interference": {
+      "v": 5e-05,
+      "class": "bounded",
+      "unit": "m",
+      "min": -0.0002,
+      "max": 0.001,
+      "description": "Designed overlap between the clamp's knob and flank and the rail notch in the nominal closed position. Positive means the tip has to be forced into the notch, so the bolt preload drives the rail foot down onto the receiver floor -- the only way the joint carries preload at the notch at all. Zero is line-to-line; negative is a running gap"
+    },
+    "guide_clearance": {
+      "v": 0.0,
+      "class": "bounded",
+      "unit": "m",
+      "min": 0.0,
+      "description": "Gap between the clamp and the receiver flank and scoop in the closed position. The contact network closes it only if the joint deflects that far"
+    },
+    "lug_gap": {
+      "v": 0.001,
+      "class": "bounded",
+      "unit": "m",
+      "min": 0.0,
+      "description": "Gap between the two lug faces at assembly, before preload. With a gap the bolt clamps the crankpin rather than the lugs"
+    },
+    "lug_length": {
+      "v": 0.012,
+      "class": "bounded",
+      "unit": "m",
+      "min": 0.005,
+      "description": "Length of each lug along the bolt axis"
+    },
+    "lug_wall": {
+      "v": 0.0025,
+      "class": "bounded",
+      "unit": "m",
+      "min": 0.001,
+      "description": "Material below the bolt hole at the bottom of the lug"
+    },
+    "shell_mass": {
+      "v": 0.03,
+      "class": "free",
+      "unit": "kg",
+      "description": "Big-end bearing shells, the one piece of rod hardware not modelled as a solid. Lumped at the crankpin centre",
+      "source": "estimated"
+    },
+    "bigend_material": {
+      "v": "4340",
+      "class": "free",
+      "description": "Material of the receiver and both clamps"
+    },
+    "bolt_diameter": {
+      "v": 0.008,
+      "class": "bounded",
+      "unit": "m",
+      "min": 0.004
+    },
+    "bolt_pitch": {
+      "v": 0.00125,
+      "class": "free",
+      "unit": "m"
+    },
+    "bolt_offset": {
+      "v": 0.0065,
+      "class": "bounded",
+      "unit": "m",
+      "min": 0.002,
+      "description": "Distance from the crankpin bore surface to the bolt axis, straight down"
+    },
+    "bolt_preload": {
+      "v": 25000.0,
+      "class": "bounded",
+      "unit": "N",
+      "min": 0.0,
+      "description": "Assembly preload in the single tangential bolt"
+    },
+    "bolt_material": {
+      "v": "300M",
+      "class": "free"
+    },
+    "bolt_proof_strength": {
+      "v": 1300000000.0,
+      "class": "free",
+      "unit": "Pa"
+    },
+    "bolt_finish": {
+      "v": "ground",
+      "class": "free",
+      "description": "Rolled threads are better than this credits"
+    },
+    "sleeve_material": {
+      "v": "AlSi10Mg-T6",
+      "class": "free",
+      "description": "The concept leaves this open. Candidates in the database: CFRP-quasi-iso, PEEK-CF30, AZ80-T5, 7075-T6, Ti-6Al-4V"
+    },
+    "sleeve_wall": {
+      "v": 0.002,
+      "class": "bounded",
+      "unit": "m",
+      "min": 0.0005,
+      "description": "Sleeve wall outside the rails, in x and in y"
+    },
+    "sleeve_clearance": {
+      "v": 5e-05,
+      "class": "bounded",
+      "unit": "m",
+      "min": 0.0,
+      "description": "Clearance between each rail and its sleeve channel"
+    },
+    "sleeve_end_gap": {
+      "v": 0.001,
+      "class": "bounded",
+      "unit": "m",
+      "min": 0.0002,
+      "description": "Gap between the sleeve and the eye at the top, and between the sleeve and the clamp tips at the bottom"
+    },
+    "bracing_fraction": {
+      "v": 0.02,
+      "class": "bounded",
+      "unit": "-",
+      "min": 0.0,
+      "max": 0.2,
+      "description": "Lateral force the sleeve must supply to keep the rails straight, as a fraction of rod compression. The classical bracing rule is 1-2%",
+      "source": "estimated"
+    },
+    "contact_depth": {
+      "v": 0.002,
+      "class": "bounded",
+      "unit": "m",
+      "min": 0.0001,
+      "description": "Effective compliant depth behind each contact patch, setting contact stiffness as E * area / depth. The network treats the parts as rigid, so this is where all of their elasticity is lumped. Load SHARING between redundant contacts depends on it; statically determinate paths do not",
+      "source": "estimated"
+    },
+    "rail_engagement": {
+      "v": 0.011,
+      "class": "bounded",
+      "unit": "m",
+      "min": 0.0081,
+      "why_min": "the notch has to finish below the floor of the sleeve seat, or the clamp is reaching over the top of the receiver instead of through its wall",
+      "description": "How deep each rail sits in the receiver, from its flat foot up to the floor of the sleeve seat. The locking notch lives inside this depth, so the swing clamp reaches it through the receiver's own wall rather than over the top"
+    },
+    "receiver_wall": {
+      "v": 0.004,
+      "class": "bounded",
+      "unit": "m",
+      "min": 0.002,
+      "description": "Material outboard of each rail slot at the top of the receiver. This is the wall the curved swing channel is cut through, so it has to be thicker than the channel is deep"
+    },
+    "receiver_rim": {
+      "v": 0.002,
+      "class": "bounded",
+      "unit": "m",
+      "min": 0.0008,
+      "description": "Material left above the channel mouth, between it and the receiver's top face"
+    },
+    "slot_clearance": {
+      "v": 0.0001,
+      "class": "bounded",
+      "unit": "m",
+      "min": 0.0,
+      "description": "Clearance between a rail and the slot it drops into in the receiver"
+    },
+    "seat_depth": {
+      "v": 0.003,
+      "class": "bounded",
+      "unit": "m",
+      "min": 0.0008,
+      "description": "Depth of the inset seat machined into the receiver's top face. The bottom of the stabilising sleeve lands in it; the rails carry on down through its floor into their slots"
+    },
+    "seat_clearance": {
+      "v": 0.0001,
+      "class": "bounded",
+      "unit": "m",
+      "min": 0.0,
+      "description": "Clearance between the sleeve and the walls of the seat it sits in"
+    },
+    "swing_radius": {
+      "v": 0.014,
+      "class": "bounded",
+      "unit": "m",
+      "min": 0.004,
+      "description": "Radius of the swing channel's centreline. This is the dimension that DEFINES the swing: the pivot is the centre of this arc, and it lies on no part -- it floats above the rail, outside every solid. A larger radius makes the clamp enter flatter and drive more squarely into the notch; a smaller one makes it drop in more steeply"
+    },
+    "swing_pivot_lean": {
+      "v": 15.0,
+      "class": "bounded",
+      "unit": "deg",
+      "min": -20.0,
+      "max": 70.0,
+      "description": "Where the pivot sits, as an angle from straight up, leaning OUT away from the rod axis, seen from the seated clamp tip. It has to lean out: lean it in and the pivot lands inside the rail or the sleeve, and the layout refuses it, because a pivot on a part is a part acting as the hinge. Leaning it out also tips the tip's travel, so the clamp swings down onto the crankpin as it closes rather than sliding straight sideways into the notch"
+    },
+    "swing_open_angle": {
+      "v": 40.0,
+      "class": "bounded",
+      "unit": "deg",
+      "min": 5.0,
+      "max": 75.0,
+      "description": "How far back the clamp swings from seated. The channel through the receiver is the clamp's tongue swept through this angle, so it is what makes the channel a channel rather than a slot"
+    },
+    "channel_thickness": {
+      "v": 0.005,
+      "class": "bounded",
+      "unit": "m",
+      "min": 0.002,
+      "description": "Radial thickness of the swing channel, and so of the clamp tongue that runs in it. Its width along the crank axis is not a free parameter: it is the rail depth, because the tongue has to fill the notch front to back"
+    },
+    "channel_clearance": {
+      "v": 7.5e-05,
+      "class": "bounded",
+      "unit": "m",
+      "min": 0.0,
+      "description": "Clearance between the clamp tongue and the walls of the channel it swings in"
+    },
+    "sleeve_core": {
+      "v": "sheet-gyroid",
+      "class": "free",
+      "description": "What fills the web between the two rail skins: 'sheet-gyroid' for the printed lattice, 'solid' for the original one-piece sleeve. Everything else about the sleeve is the same either way"
+    },
+    "sleeve_skin": {
+      "v": 0.0009,
+      "class": "bounded",
+      "unit": "m",
+      "min": 0.0005,
+      "why_min": "a skin thinner than half a millimetre cannot be held flat through machining, let alone bear on a rail",
+      "description": "Thickness of the solid skin wrapped round each rail channel, AFTER machining. These are the only surfaces on the sleeve that touch anything, and both channels are machined in one fixture so they stay parallel. Thicker skins eat the lattice core from both sides, and the core has to stay at least four cells wide for its effective properties to mean anything"
+    },
+    "sleeve_face_shell": {
+      "v": 0.0008,
+      "class": "bounded",
+      "unit": "m",
+      "min": 0.0,
+      "description": "Thickness of the thin solid shell on each of the sleeve's two big faces. Ties the two rail skins together and makes the part handleable; set it to zero to leave the lattice open on both faces, which is the easiest thing in the world to get powder out of and the least stiff"
+    },
+    "machining_allowance": {
+      "v": 0.0004,
+      "class": "bounded",
+      "unit": "m",
+      "min": 0.0,
+      "description": "Stock left on the printed rail channels for the single machining fixture. The skin is PRINTED at sleeve_skin plus this and machined back"
+    },
+    "lattice_cell": {
+      "v": 0.0035,
+      "class": "bounded",
+      "unit": "m",
+      "min": 0.0015,
+      "description": "Gyroid unit cell. It fights itself from both ends: a smaller cell fits more cells across the core (which homogenisation needs) but thins the sheet below what the machine can print at a given density, and a larger cell does the reverse"
+    },
+    "lattice_density": {
+      "v": 0.36,
+      "class": "bounded",
+      "unit": "-",
+      "min": 0.05,
+      "max": 0.75,
+      "description": "Relative density of the lattice at the sleeve's MID-LENGTH, where the shear it carries is least. This is the number to sweep: the web's shear stiffness is what turns two rails into one column, so it lands straight on the buckling margins"
+    },
+    "lattice_end_density": {
+      "v": 0.5,
+      "class": "bounded",
+      "unit": "-",
+      "min": 0.05,
+      "max": 0.75,
+      "description": "Relative density at each END of the sleeve. Denser than mid-length on purpose: a shear web's demand is V = dM/dz, which peaks at the ends and vanishes at mid-length, the opposite of the bending moment"
+    },
+    "lattice_grading_exponent": {
+      "v": 2.0,
+      "class": "bounded",
+      "unit": "-",
+      "min": 0.5,
+      "max": 6.0,
+      "description": "How the density runs from mid-length to the ends, as |s|^exponent. 1 is linear; higher keeps the light middle for longer and puts the transition nearer the ends"
+    },
+    "lattice_min_wall": {
+      "v": 0.00035,
+      "class": "bounded",
+      "unit": "m",
+      "min": 0.0001,
+      "description": "Thinnest sheet the machine will print. The binding station is wherever the graded density is LOWEST, not the average. Replace with your own machine's figure",
+      "source": "estimated"
+    },
+    "lattice_ports": {
+      "v": true,
+      "class": "free",
+      "description": "Powder ports through the face shells, on the cell pitch. With shells on both faces and a rail skin on each side the core is closed on four sides and drains only along its own length; the ports cut that path by an order of magnitude. Irrelevant if sleeve_face_shell is zero"
+    },
+    "lattice_port_diameter": {
+      "v": 0.0025,
+      "class": "bounded",
+      "unit": "m",
+      "min": 0.001,
+      "description": "Diameter of each powder port through the face shells"
+    },
+    "lattice_modulus_coefficient": {
+      "v": 0.8,
+      "class": "bounded",
+      "unit": "-",
+      "min": 0.1,
+      "max": 2.0,
+      "description": "C in E*/Es = C rho^n for the sheet gyroid. A CALIBRATED GUESS from published sheet-TPMS fits, not a measurement. Every lattice stiffness in this tool rests on it, so it is the first thing to replace with compression coupons off your own machine in your own build orientation",
+      "source": "estimated"
+    },
+    "lattice_modulus_exponent": {
+      "v": 1.35,
+      "class": "bounded",
+      "unit": "-",
+      "min": 1.0,
+      "max": 2.5,
+      "description": "n in E*/Es = C rho^n. Near 1 is stretch-dominated, near 2 is bending-dominated; sheet gyroids sit in between and closer to stretch, which is why they beat the network form. Also a calibrated guess",
+      "source": "estimated"
+    },
+    "lattice_strength_coefficient": {
+      "v": 0.65,
+      "class": "bounded",
+      "unit": "-",
+      "min": 0.1,
+      "max": 2.0,
+      "description": "C in sigma*/sigma_s = C rho^n for the lattice. Calibrated guess. Printed lattice strength is hit harder by surface roughness than stiffness is, because a rough as-built sheet is all notch",
+      "source": "estimated"
+    },
+    "lattice_strength_exponent": {
+      "v": 1.45,
+      "class": "bounded",
+      "unit": "-",
+      "min": 1.0,
+      "max": 2.5,
+      "description": "n in sigma*/sigma_s = C rho^n. Calibrated guess",
+      "source": "estimated"
+    }
+  }
+}

@@ -99,11 +99,17 @@ class MeshResult:
 
 
 def surface_of(state, part: str, tolerance: float = 0.6,
-               angular: float = 0.35):
-    """Triangulate a part. Returns (vertices, triangles) in millimetres."""
-    builder, _ = build_mod.BUILDS[part]
+               angular: float = 0.35, solid=None):
+    """Triangulate a part. Returns (vertices, triangles) in millimetres.
+
+    ``solid`` meshes something other than the part as built -- used for the
+    rail rod's sleeve, whose printed solid has its lattice core missing.
+    """
+    from ..geometry import build_all
+    if solid is None:
+        solid = build_all(state)[part]["solid"]
     vertices, triangles = build_mod.tessellate_solid(
-        builder(state).val(), tolerance, angular)
+        solid.val(), tolerance, angular)
     return (np.array([[v.x, v.y, v.z] for v in vertices], dtype=float),
             np.array(triangles, dtype=np.int32))
 
@@ -180,7 +186,8 @@ VOLUME_DRIFT_LIMIT = 0.02          # 2%, generous: the parts are mostly flat
 
 
 def tet_mesh(state, part: str, target_elements: int = 25_000,
-             tolerance: float = 0.4, min_ratio: float = 2.0) -> MeshResult:
+             tolerance: float = 0.4, min_ratio: float = 2.0,
+             solid=None) -> MeshResult:
     """Mesh one part to roughly ``target_elements`` tetrahedra.
 
     ``tolerance`` controls the surface triangulation, which sets how
@@ -192,14 +199,18 @@ def tet_mesh(state, part: str, target_elements: int = 25_000,
 
     from ..geometry import build_all
 
-    volume_mm3 = build_all(state)[part]["properties"].volume * 1e9
+    if solid is None:
+        volume_mm3 = build_all(state)[part]["properties"].volume * 1e9
+    else:
+        volume_mm3 = abs(solid.val().Volume())
     # Edge length for roughly the element count asked for. A tetrahedron of
     # edge h occupies about h^3/8, so this is the cube root of the share each
     # element gets, with a little slack.
     target_edge = (volume_mm3 / max(target_elements, 100) * 6.0) ** (1.0 / 3.0)
 
     vertices, triangles = surface_of(state, part,
-                                     min(tolerance, target_edge / 3.0))
+                                     min(tolerance, target_edge / 3.0),
+                                     solid=solid)
     vertices, triangles = weld(vertices, triangles)
 
     report = audit_surface(vertices, triangles)

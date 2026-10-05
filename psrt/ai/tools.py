@@ -309,6 +309,52 @@ TOOLS = [
             "ring can seal it."),
         "input_schema": {"type": "object", "properties": {}},
     },
+    {
+        "name": "railrod_report",
+        "description": (
+            "The rail connecting rod concept (monolithic small end and twin "
+            "steel rails, stabilising sleeve, big-end receiver, two swing "
+            "clamps hooked into radiused rail notches, one tangential bolt). "
+            "Returns part masses, notch geometry, the swing/assembly check, "
+            "whether the ramp is steep enough to self-seat, and the contact "
+            "forces at assembly, peak tension and peak firing. Its "
+            "parameters live in the 'railrod' section; set "
+            "railrod.enabled to true (via propose/commit) to use it. With "
+            "coupled=true the parts' FEA flexibility is coupled into the "
+            "contact network (tens of seconds the first time); the rigid "
+            "network is optimistic about load sharing and says so."),
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "coupled": {"type": "boolean",
+                            "description": "use the FEA-coupled network"},
+            },
+        },
+    },
+    {
+        "name": "railrod_fea",
+        "description": (
+            "Finite element analysis of ONE rail-rod part through the whole "
+            "crank cycle: rr_rails, rr_sleeve, rr_receiver, rr_clamp_right, "
+            "rr_clamp_left or rr_bolt. Each part is solved separately, "
+            "loaded by the contact forces the coupled network gives it at "
+            "every crank angle. Returns the cycle-peak von Mises, where and "
+            "at what angle it occurs, a static and a Goodman fatigue safety "
+            "factor, and the equilibrium check. Slow: up to a minute."),
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "part": {"type": "string",
+                         "enum": ["rr_rails", "rr_sleeve", "rr_receiver",
+                                  "rr_clamp_right", "rr_clamp_left",
+                                  "rr_bolt"]},
+                "elements": {"type": "integer",
+                             "description": "target mesh size, default "
+                                            "20000"},
+            },
+            "required": ["part"],
+        },
+    },
 ]
 
 
@@ -538,6 +584,31 @@ def _dispatch(session, name: str, args: dict) -> dict:
 
     if name == "compare_bore_profiles":
         return geo.profile_study(state)
+
+    if name in ("railrod_report", "railrod_fea"):
+        from ..railrod import analysis as rr
+        if not rr.enabled(state):
+            raise ToolError(
+                "the rail rod is not enabled for this design; propose "
+                "railrod.enabled = true first")
+        if name == "railrod_report":
+            if args.get("coupled"):
+                from ..railrod.coupled import coupled_analysis
+                a = coupled_analysis(state)
+            else:
+                a = rr.analyse(state)
+            out = a.summary()
+            out["network"] = ("coupled" if args.get("coupled") else
+                              "rigid -- load sharing is optimistic")
+            return out
+        from ..railrod import fea
+        part = args.get("part")
+        if part not in fea.PARTS_WITH_FEA:
+            raise ToolError(f"part must be one of {', '.join(fea.PARTS_WITH_FEA)}")
+        result = fea.solve_part(state, part,
+                                target_elements=int(args.get("elements",
+                                                             20_000)))
+        return fea.summarise(result, state)
 
     raise ToolError(f"unknown tool {name!r}; available: "
                     + ", ".join(tool_names()))

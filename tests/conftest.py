@@ -46,3 +46,8 @@ def d2(f, x, h=1e-4):
     """Five-point central second derivative. Error O(h^4)."""
     return (-f(x + 2 * h) + 16 * f(x + h) - 30 * f(x)
             + 16 * f(x - h) - f(x - 2 * h)) / (12 * h * h)
+
+
+def pytest_configure(config):
+    config.addinivalue_line(
+        "markers", "slow: runs a finite element solve (tens of seconds)")

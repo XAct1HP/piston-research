@@ -540,3 +540,37 @@ details.group[open] > summary::after { content: "\2212"; }
   line-height: 1.4;
 }
 .fea-notes li { margin-bottom: 3px; }
+
+
+/* --- rail rod panel --------------------------------------------------- */
+.rr-toggle { display: flex; align-items: center; gap: 8px; padding: 0 14px 8px; }
+.rr-muted { font-size: 11px; color: var(--text-muted); }
+#tab-railrod h3 { font-size: 11px; font-weight: 600; letter-spacing: .04em;
+  text-transform: uppercase; color: var(--text-muted); margin: 14px 14px 6px; }
+#rr-body > p, #rr-body > .rr-muted, #rr-body > .rr-row { padding: 0 14px; }
+.rr-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; padding: 0 14px; }
+.rr-card { background: var(--raised, #232322); border: 1px solid var(--border);
+  border-radius: 6px; padding: 6px 8px; }
+.rr-card .k { font-size: 10px; color: var(--text-muted); }
+.rr-card .v { font: 13px var(--mono, ui-monospace, monospace); }
+.rr-card .s { font-size: 10px; color: var(--text-muted); }
+.rr-card.bad .v { color: var(--critical); }
+.rr-card.ok .v { color: var(--good); }
+.rr-section-head { display: flex; align-items: center; justify-content: space-between;
+  padding-right: 14px; }
+.rr-section-head select { font-size: 11px; background: transparent;
+  color: var(--text-secondary, #c8c6c0); border: 1px solid var(--border); border-radius: 4px; }
+#rr-svg { display: block; width: calc(100% - 28px); height: auto; margin: 0 14px; aspect-ratio: 1;
+  background: var(--surface-0, #121211); border: 1px solid var(--border); border-radius: 6px; }
+.rr-swing { display: flex; align-items: center; gap: 8px; padding: 6px 14px;
+  font-size: 11px; color: var(--text-muted); }
+.rr-swing input { flex: 1; }
+.rr-fea { display: flex; flex-wrap: wrap; gap: 4px; padding: 0 14px; }
+.rr-fea button { font-size: 11px; }
+.rr-fea button.on { border-color: var(--series-1); color: var(--text-primary); }
+#rr-fea-result { padding: 6px 14px; line-height: 1.5; }
+#rr-margins { padding: 0 14px; }
+.rr-margin { display: flex; justify-content: space-between; gap: 8px; font-size: 11px;
+  padding: 3px 0; border-bottom: 1px solid var(--border); }
+.rr-margin .sf { font-family: var(--mono, ui-monospace, monospace); }
+#rr-notes { padding: 8px 14px 16px; }

@@ -22,6 +22,7 @@ from __future__ import annotations
 import math
 
 from .schema_structural import link_pin_to_boss, structural_sections
+from .railrod.params import railrod_section, refresh_railrod_bounds
 from .state import DesignState, Mutability, Parameter, derived
 
 FREE = Mutability.FREE
@@ -487,6 +488,7 @@ def default_state(name: str = "untitled") -> DesignState:
         "constraints": constraints,
     }
     sections_map.update(structural_sections())
+    sections_map["railrod"] = railrod_section()
 
     state = DesignState(
         sections_map,
@@ -515,6 +517,7 @@ def refresh_bounds(state: DesignState) -> list[str]:
     REFUSED with its reason rather than computed and reported afterwards.
     """
     notes: list[str] = []
+    notes.extend(refresh_railrod_bounds(state))
     if not (state.has("block.as_built_bore") and state.has("engine.bore")):
         return notes
 

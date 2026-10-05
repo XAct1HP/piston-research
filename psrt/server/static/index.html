@@ -80,6 +80,7 @@
   <aside class="rail right">
     <div class="rail-tabs" id="rail-tabs">
       <button data-tab="margins" class="on">Margins</button>
+      <button data-tab="railrod">Rail rod</button>
       <button data-tab="optimise">Optimise</button>
       <button data-tab="assistant">Assistant</button>
     </div>
@@ -91,6 +92,48 @@
       </div>
       <div id="margin-chart"></div>
       <div id="margins"></div>
+    </div>
+
+    <div class="tabpanel scrolls" id="tab-railrod" hidden>
+      <div class="rail-head">
+        <h2>Rail connecting rod</h2>
+        <p>Twin steel rails, a stabilising sleeve, a big-end receiver, two
+           swing clamps hooked into radiused rail notches, one tangential
+           bolt. Six separate parts, each analysed on its own through the
+           whole cycle.</p>
+      </div>
+      <div class="rr-toggle">
+        <button id="rr-enable" class="ghost">Use the rail rod</button>
+        <span id="rr-state" class="rr-muted"></span>
+      </div>
+      <div id="rr-body" hidden>
+        <div id="rr-cards" class="rr-cards"></div>
+        <div class="rr-section-head">
+          <h3>Big end in section</h3>
+          <select id="rr-forces" title="which contact forces to draw">
+            <option value="assembly">forces at assembly</option>
+            <option value="crank">forces at the crank angle</option>
+            <option value="none">no forces</option>
+          </select>
+        </div>
+        <svg id="rr-svg" viewBox="-46 -46 92 92"></svg>
+        <div class="rr-swing">
+          <label for="rr-swing">clamp swing</label>
+          <input type="range" id="rr-swing" min="0" max="45" value="0" step="0.5">
+          <output id="rr-swing-value">0&deg;</output>
+          <button id="rr-zoom" class="ghost" title="zoom on the notch">notch</button>
+        </div>
+        <p id="rr-network" class="rr-muted"></p>
+        <div class="rr-row">
+          <button id="rr-couple" class="ghost">Couple FEA flexibility</button>
+        </div>
+        <h3>FEA per part</h3>
+        <div id="rr-fea" class="rr-fea"></div>
+        <div id="rr-fea-result" class="rr-muted"></div>
+        <h3>Margins</h3>
+        <div id="rr-margins"></div>
+        <div id="rr-notes" class="rr-muted"></div>
+      </div>
     </div>
 
     <div class="tabpanel scrolls" id="tab-optimise" hidden>
@@ -163,5 +206,6 @@
 <script src="/static/vendor/three.min.js"></script>
 <script src="/static/vendor/OrbitControls.js"></script>
 <script src="/static/app.js"></script>
+<script src="/static/railrod.js"></script>
 </body>
 </html>

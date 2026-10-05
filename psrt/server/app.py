@@ -58,6 +58,10 @@ def _clean(value):
         return [_clean(v) for v in value]
     if isinstance(value, (np.floating, np.integer)):
         return _clean(float(value))
+    if isinstance(value, np.bool_):
+        return bool(value)
+    if isinstance(value, np.ndarray):
+        return _clean(value.tolist())
     return value
 
 
@@ -97,6 +101,7 @@ def create_app(state_path: str | None = None) -> FastAPI:
             "notes": session.state.meta.get("notes", ""),
             "provenance": session.state.meta.get("provenance", ""),
             "fingerprint": session.state.fingerprint(),
+            "geometry_fingerprint": geo.fingerprint(session.state),
             "sections": out,
             "issues": session.state.validate(),
             "can_undo": bool(session.undo_stack),
@@ -304,6 +309,11 @@ def create_app(state_path: str | None = None) -> FastAPI:
         except ImportError as exc:
             return missing(exc)
 
+        if part == "rod" and session.state["railrod.enabled"]:
+            return {"ok": False,
+                    "error": "this design uses the rail rod, which has no "
+                             "single 'rod' part; analyse its parts from the "
+                             "Rail rod tab"}
         if part not in CASES:
             return {"ok": False,
                     "error": f"no load case for {part!r} yet; "
@@ -389,6 +399,9 @@ def create_app(state_path: str | None = None) -> FastAPI:
             "free_rigid_modes": case.solve.free_rigid_modes,
             "notes": case.solve.notes,
         })
+
+    from .railrod_api import register as register_railrod
+    register_railrod(app, session, _clean)
 
     @app.get("/api/geometry/check")
     def geometry_check(tolerance: float = 0.03):

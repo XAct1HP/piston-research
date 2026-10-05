@@ -125,8 +125,16 @@ psrt/
     agent.py      the tool-use conversation loop
   evaluate.py     evaluate(state) -> metrics, the pure function
   cli.py          the interface
-tests/            416 tests, including hardware validation against the LS3
-examples/         LS3 and a generic 2.0 L I4, with per-parameter provenance
+  railrod/        the rail connecting rod concept (see its own section below)
+    params.py     the railrod.* parameter section
+    layout.py     every part's profile in the plane of rotation; swing check
+    cad.py        six separate solids, the notch cut with exact arcs
+    network.py    contact network, rigid, at every crank angle
+    coupled.py    the same network with each part's FEA flexibility coupled in
+    fea.py        per-part FEA through the whole cycle by superposition
+    analysis.py   one cached call: layout, masses, cycle, swing, fit
+tests/            450 tests, including hardware validation against the LS3
+examples/         LS3, LS3 with the rail rod, and a generic 2.0 L I4
 ```
 
 ## The three ideas the rest is built on
@@ -950,3 +958,285 @@ distribution along the pin and fitting the support span to that, and giving
 the load and reaction patches a compliant footprint instead of a rigid one.
 Until then `crown_support_radius_fraction`, `pin.support_span_factor` and the
 notch factors remain calibrated guesses, and caveat 1 above still stands.
+
+
+## The rail connecting rod
+
+A second rod architecture, built from the concept document *Concept Connecting
+Rod Geometry and Architecture* and its sketch: a monolithic steel small end
+and twin rails with no I-beam web between them, a printed lattice-cored
+stabilising sleeve slid up over the rails from the big-end side, a receiver the
+flat rail feet seat on, two mirrored swing clamps that run in curved channels
+cut through the receiver's outboard walls and hook into radiused notches near
+the rail ends, and one tangential bolt joining the clamps under the big end.
+
+The receiver is a deep socket, not a shallow pad. Its top face carries an
+inset seat the bottom of the stabilising sleeve lands in; the rails carry on
+down through slots in the floor of that seat to the face their flat feet sit
+on. The locking notches are inside that depth, so each clamp reaches its notch
+through the receiver's own wall rather than over the top of it -- which is
+what the swing channel is for.
+
+```
+python -m psrt railrod examples/ls3-railrod.json            # layout, network, margins
+python -m psrt railrod examples/ls3-railrod.json --coupled  # with part flexibility
+python -m psrt railrod examples/ls3-railrod.json --fea all  # FEA of every part
+python -m psrt railrod examples/ls3-railrod.json --export ./cad   # STEP, per part
+python -m psrt geometry examples/ls3-railrod.json --adopt   # take its own masses
+```
+
+In the browser, the **Rail rod** tab switches a design over (the
+`railrod.enabled` parameter), draws the big end in section with the clamp swing
+and the contact forces at any crank angle, and runs the FEA of any part with
+the crank slider driving the stress colours. The assistant has two tools for
+it, `railrod_report` and `railrod_fea`.
+
+### Six parts, each its own solid
+
+`rr_rails`, `rr_sleeve`, `rr_receiver`, `rr_clamp_right`, `rr_clamp_left`,
+`rr_bolt`. Each is meshed, loaded and solved on its own, because the load moves
+between them around the cycle -- firing goes rails, flat feet, receiver floor,
+crankpin; overlap tension goes rails, notch, clamps, crankpin -- and each part
+has to be checked for the loads it actually sees. They share the conventional
+rod's frame, so the viewport places them exactly where the rod was.
+
+### The notch, and why the clamp fits it
+
+The notch follows the document's convention exactly: travelling down the
+rail, the deepest point comes first, then a straight ramp back out to full
+width, a blend, a full-width land and the flat foot. The deepest/top transition
+is a single radius tangent to the ramp -- never a corner -- and
+`notch_top_radius` is bounded below by `notch_depth`, because a smaller radius
+cannot reach back to the rail face without a step or an undercut, which the
+concept rules out. The rail notch is cut in the solid with true circular arcs.
+
+The clamp's male side is not drawn separately. It is made by subtracting the
+rail, grown by `tip_clearance`, from the clamp blank, so the tongue's nose and flank are
+the notch offset by the clearance to the precision of the kernel, whatever the
+notch dimensions become (`tests/test_railrod.py` measures the gap at 22 points
+along the nose and flank). The same is done between the clamp arm and the
+receiver flank.
+
+### FEA: every part, through the cycle
+
+`--fea all` meshes each part on its own and solves it for every contact the
+network places on it, at every crank angle. Two things about it are specific
+to this rod.
+
+**The sleeve is one mesh of two materials.** Its printed solid has a hole
+where the lattice is, and meshing that hole would drop the core out of the
+model and leave the skins carrying loads they share with it. So the FEA
+meshes the block whole and gives the elements inside the core box the
+lattice's homogenised properties, graded along the sleeve's length. Stress is
+recovered with the local stiffness, not the skin's, and each region is scored
+against its own allowable -- the core's is about a sixth of the alloy's, so
+judging both by one number would be meaningless. Elements on the interface
+are reported separately and not treated as the answer: a step change in
+modulus is a singularity in a continuum exactly as a re-entrant corner is,
+and what the real interface will take depends on the fillet where each gyroid
+sheet meets the shell, which is a sub-model of a few cells rather than this
+mesh.
+
+**A key is not a bearing.** Every contact is applied as a cosine pressure
+about the surface normal, which is right for a bore and delivers nothing at
+all for a patch standing edge-on to its own force. The clamp tongue in its
+channel is exactly that, so a patch whose cosine pressure cannot deliver its
+axis force falls back to a uniform traction and says so in the notes.
+
+### The sleeve
+
+The sleeve is the part of this concept that earns its keep, and it is the one
+part that is not solid. Two thin solid skins, one wrapped round each rail
+channel, joined across the web between them by a graded sheet-gyroid lattice,
+with a thin shell on each of the two big faces and a bearing pad at the bottom
+where the sleeve lands in the receiver's seat. AlSi10Mg, laser powder-bed
+fused.
+
+The route it is designed for: print, take off the plate, stress relieve and
+T6, depowder, machine BOTH rail channels in one fixture so they cannot go out
+of parallel, finish the contact faces, inspect, then slide it up the rails
+from the big-end side and capture it when the receiver goes on.
+
+Three things the tool checks rather than assumes:
+
+* **The thinnest place on the wall, not its nominal thickness.** A gyroid's
+  wall is `2c / |grad phi|`, and `|grad phi|` runs from `sqrt(2) k` to
+  `sqrt(3) k` over the cell, so the thinnest place is 18% under nominal.
+  Checking the nominal passes lattices the machine cannot hold. And the
+  station that binds is wherever the graded density is LOWEST, which with
+  end-grading is mid-length, not the average.
+* **Powder evacuation.** A sealed cell of unfused metal is dead weight no
+  inspection finds. The sheet gyroid's own void is two interpenetrating
+  continuous networks, so the lattice never seals itself -- but the skins and
+  shells around it nearly do, and the core would otherwise drain only along
+  its own 96 mm. So both face shells carry ports on the cell pitch, and the
+  margin reports the narrowest channel the powder passes and how far it has
+  to travel through it.
+* **Whether the effective properties mean anything.** Below about four cells
+  across, a lattice behaves like the handful of sheets it is rather than the
+  continuum its homogenised stiffness describes. The core here is 14.1 mm
+  wide, so the cell size and the density fight each other: a smaller cell
+  fits more cells across but thins the sheet below what the machine prints.
+
+The core is carried as an effective continuum (`E*/Es = C rho^n`, with the
+shear modulus taken from that through the effective Poisson ratio so the
+three stay consistent). `C` and `n` are design state, marked estimated, and
+they are the first thing to replace with compression coupons off your own
+machine -- every lattice stiffness in this tool rests on them.
+
+The density relation itself is not quoted, it is measured: the tool's own
+gyroid was voxel-counted at 320^3 and fitted, because the textbook thin-sheet
+area came out 9% heavy against the mesh the tool was generating.
+
+Grading runs from light at mid-length to dense at the ends, which is the
+opposite of where the bending moment peaks and the right way round for a
+shear web: the demand is `V = dM/dz`, largest at the ends and zero in the
+middle. The single shear modulus handed to the buckling model is a
+compliance average weighted by `V(z)^2` over the piece of the rod the sleeve
+actually covers, so grading shows up in the answer instead of averaging out.
+
+### The swing
+
+The clamp does not hinge on anything. It runs in a curved channel through the
+receiver's outboard wall, and a body held to a circular channel turns about the
+centre of that circle -- so the pivot is wherever the channel's radius puts it,
+out in open air above the rail, on none of the parts. `swing_radius` and
+`swing_pivot_lean` place it and nothing else may, and the layout refuses a
+combination that lands it inside the rail, the sleeve, the receiver or the
+bore, because a pivot on a part means that part has quietly become the hinge.
+
+Everything else is then derived from it, once:
+
+* the clamp's tongue is an annular sector about the pivot -- constant radius,
+  so it slides through the channel without binding at any angle;
+* the channel IS that tongue swept through `swing_open_angle`, subtracted from
+  the receiver. It is never drawn a second time, so it cannot drift;
+* the tongue's tip is still the rail notch grown by `tip_clearance`,
+  subtracted, so the male form conforms to whatever the notch becomes;
+* front to back the tongue, the channel and the notch are one dimension, the
+  rail depth. The clamp is therefore two widths: the full big-end width where
+  it is the bearing cap, the rail depth where it passes into the receiver.
+
+The pivot leans OUT, away from the rod axis. It has to: everything directly
+above a notch is rail, and above that is sleeve. Leaning it out also tips the
+tip's travel, so the clamp swings down onto the crankpin as it closes rather
+than sliding straight sideways into the notch.
+
+The arc climbs as it runs outward, so the receiver has to be tall enough for
+the channel mouth to land on the outboard face with a rim above it.
+`build_layout` raises with the arithmetic when it is not, rather than building
+something that cannot be cut.
+
+`swing_check` then rotates the whole clamp numerically against the rail, the
+receiver, the sleeve, the crankpin and the other clamp, and reports the
+opening at which the tongue leaves the notch and the opening at which it is
+clear of the receiver's face -- the angle the clamp is threaded in at. On the
+example: free to 75 degrees, releases at 12, hooks in at 26.5.
+
+### Who pushes on whom: the contact network
+
+Nothing about this rod can be read off one free-body diagram -- the clamp alone
+has more contacts than a rigid body has equations -- so the load sharing comes
+from a contact network: rail, receiver and clamp as bodies joined by
+compression-only contacts at the floor, the slot web, the ramp, the nose
+socket, the receiver seat and flank, the crankpin and the lug faces, plus the
+bolt, which is tightened to its preload at assembly and is a fixed-length
+spring after that. It is solved at every crank angle.
+
+There are two versions, and the difference is the most important thing in
+this section.
+
+* **Rigid** (`network.py`). Fast enough for every evaluation, so the margins
+  use it until something better exists. Statically determinate things -- the
+  rail force, what the floor carries at firing -- are right. Load SHARING is
+  not: a rigid clamp tightened by its bolt pivots on the crankpin and lands its
+  preload on one corner of the receiver.
+* **Coupled** (`coupled.py`). Each part's compliance comes from its own FEA
+  unit solutions (inertia-relieved, so the flexibility matrix is the free-free
+  one: symmetric and positive semi-definite), and the network is solved with
+  elastic deformation in every gap. It reproduces the rigid answer exactly when
+  the parts are made stiff (a test holds it to that). The first call on a
+  design solves the rails, receiver and right clamp -- about 40 seconds -- and
+  every preload, fit or speed study after that reuses them, because unit
+  solutions are keyed on geometry alone.
+
+### FEA of each part through the whole cycle
+
+The load on a part is never one pattern scaled up and down, so the
+conventional cases' trick of scaling a single field does not apply.
+Superposition does. Every contact in the network becomes its own unit case --
+a 1 N cosine pressure on a patch of the real surface centred on the contact
+point, along its normal -- plus the pin force on the eye, the parts' inertia
+and the rails' transverse whip. One factorisation, a few dozen back
+substitutions, and then
+
+    sigma(theta) = sum_k c_k(theta) sigma_k
+
+with the coefficients read straight off the network's contact forces. The
+full tensor at every crank angle gives a cycle peak and a Goodman fatigue
+factor for every element. Loads are balanced, so each part is held only against
+rigid-body motion, and inertia relief spreads the small imbalance a pressure
+patch leaves (versus the point contact it stands for) over the whole part
+instead of three restraint nodes. The equilibrium residual is reported for
+every part; on the example it is under 0.01% in force and under 1% in moment.
+
+### What it finds on the example -- read this before the pictures
+
+`examples/ls3-railrod.json` is the LS3 load environment with the rail rod at
+dimensions scaled from the sketch. Every rail-rod dimension is a starting point.
+At 4600 rpm, coupled network:
+
+| | |
+| --- | --- |
+| mass | 599 g of parts + 30 g of shells = 630 g, against 642 g for the conventional rod measured from its own solid: **12 g, 1.9% lighter**. The sleeve is 72 g; the same sleeve solid in AlSi10Mg would be 112 g, and the solid CFRP sleeve it replaced was 65 g |
+| where the mass went | the rail rod's centre of mass sits at 0.677 of rod length against 0.658, so more of what is left is rotating. **Reciprocating rod mass falls 8.7 g, 4.0%** -- twice the total saving in percentage terms -- and that is the share that drives inertia load |
+| sleeve lattice | 3.5 mm cell, 0.36 relative density at mid-length to 0.50 at the ends, 0.405 mm nominal sheet and 0.357 mm at its thinnest against a 0.35 mm machine minimum |
+| powder | 1.12 mm channel, 13 mm to the nearest of 26 ports |
+| tongue and flank | conform to the notch at 50.0-50.2 micron clearance |
+| swing | assemblable: free to 75 deg, releases at 12 deg, hooks in at 26.5 deg |
+| rails, compression and buckling | safety factor 3.5 to 3.6 -- the twin rails work as a column |
+| preload at the notch | 1.5 kN at the rail seat. The channel keys each clamp to the receiver, so most of the bolt preload is reacted there (69 kN across the channel walls and flank) instead of prying the notch |
+| rail seat | still opens on the tensile stroke, at 0.29 of peak tension |
+| bolt | 23.2 to 25.0 kN: with the clamps keyed into their channels the bolt sees far less of the notch's pry than the knob-hinge version did |
+| FEA, worst static safety factor | **0.30, the receiver**. The channel that keys each clamp to the receiver reacts 69 kN of bolt preload through a 4 mm wall; about 11% of the receiver is over yield, and it is mesh-converged, so it is not a corner artefact. The guide force is very nearly proportional to bolt preload (2.75 x it), which is the cheapest lever on it |
+| FEA, the rest | rails 1.37 static / 0.40 fatigue, right clamp 1.55 / 0.19, bolt 2.10 / 1.51. The sleeve's skins 9.0 / 2.3 and its lattice core 6.7 / 0.9 against its own homogenised strength |
+| clamps | 2.0 GPa (99.5th percentile) at overlap TDC: the ring bends under that pry. Static safety factor 0.45 |
+| notch | fatigue safety factor about 0.3: the notch sits in the compressive path too, since firing load crosses the notched section to reach the flat foot |
+
+Three things drive that, and they are properties of the concept, not of these
+particular numbers:
+
+1. **A clamp riding a circular crankpin is a hinge about its centre.** The bolt
+   turns it; a contact at the notch only resists that if its line of action
+   passes on the far side of the crankpin centre. `railrod_report` gives the
+   ramp angle that takes (68 deg here), and even past it the clamp's own
+   bending lets the tip back out. Preload reaches the notch only if something
+   stops the clamp turning -- the lugs meeting at a designed crush, a seat on
+   the receiver that the clamp is pulled down onto, or a notch that faces the
+   other way.
+2. **The ramp's contact force is mostly sideways** at any ramp angle short of
+   vertical, so the tensile load arrives at the clamps as a pry, and a single
+   tangential bolt below the crankpin reacts that pry through the clamp ring
+   in bending.
+3. **The notch is in the firing path.** Compression has to cross the notched
+   section to reach the flat foot, so depth and top radius set firing fatigue
+   as well as retention.
+
+The tool exists to explore exactly these: the notch angle, depth and radii,
+the seat interference, the lug gap, the bolt position and preload, and the
+clamp and rail sections are all parameters, and the coupled network and the
+per-part FEA re-run on any of them.
+
+### What to distrust here specifically
+
+* Contacts are cosine pressures on patches, not a contact solution, so stresses
+  right at a patch edge -- the short ramp especially -- are indicative.
+* The network has no friction. The concept requires the tensile path not to
+  depend on it, so leaving it out is right for retention and pessimistic for
+  pry.
+* The crankpin is rigid and the bearing shells are a contact spring.
+* The sleeve is a slip fit: it braces the rails (the built-up column formula,
+  Timoshenko and Gere 2.18) and carries its own inertia, but takes no axial
+  load. Composite sleeve materials are entered as isotropic equivalents.
+* The rigid network's load sharing is optimistic. Every load-sharing margin
+  says which network it came from; couple before believing one.

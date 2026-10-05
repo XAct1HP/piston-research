@@ -141,14 +141,24 @@ def element_stress(mesh: MeshResult, displacement: np.ndarray,
 
 
 def stress_tensors(mesh: MeshResult, displacement: np.ndarray,
-                   material: Material) -> tuple:
+                   material: Material, lame=None) -> tuple:
     """The full Cauchy stress tensor per element, and a mesh-quality report.
 
     Separate from :func:`element_stress` because calibration needs the
     components, not just the invariants: a bending moment is the integral of
     the AXIAL stress over a section, and von Mises throws the sign away.
+
+    ``lame`` overrides the material with per-element ``(lambda, mu)`` arrays,
+    for a part that is not one material throughout -- the rail rod's sleeve
+    is solid skin round a homogenised lattice core, and recovering its stress
+    from the skin's stiffness everywhere would overstate the core by the
+    ratio of the two moduli.
     """
-    lam, mu = _lame(material)
+    if lame is None:
+        lam, mu = _lame(material)
+    else:
+        lam, mu = (np.asarray(v, dtype=float).reshape(-1, 1, 1)
+                   for v in lame)
     p, elements = mesh.points, mesh.elements
 
     p0 = p[:, elements[0]]
@@ -322,21 +332,41 @@ def _bearing_load(m, basis, bearing: Bearing, notes: list):
         weight = np.maximum(cosine, 0.0)
         return weight * sum(direction[i] * v[i] for i in range(3))
 
+    @LinearForm
+    def uniform(v, w):
+        return sum(direction[i] * v[i] for i in range(3))
+
     load = asm(distributed, facet_basis)
 
     # Scale to the resultant asked for. Summing the assembled nodal forces
     # along the load direction gives what a unit amplitude delivers.
     nodal = load.reshape((-1, 3))
     delivered = float(np.sum(nodal @ direction))
-    if abs(delivered) < 1e-30:
-        raise ValueError(
-            f"the {bearing.name} arc delivers no net force along its own "
-            "axis; the selector probably spans both sides of the bore")
+    flat = asm(uniform, facet_basis)
+    reference = float(np.sum(flat.reshape((-1, 3)) @ direction))
+
+    shape = "a cosine contact pressure"
+    if abs(delivered) < 0.02 * abs(reference):
+        # Every facet in this patch stands nearly edge-on to the load, so a
+        # cosine pressure about the surface normal delivers almost nothing
+        # along the axis the network resolved the force on. That happens
+        # where the contact is a KEY rather than a bearing -- the rail rod's
+        # clamp tongue in its channel is the case -- and there the transfer
+        # is by shear across the face, not by pressure into it. A uniform
+        # traction is the right stand-in, and it always delivers its axis
+        # force.
+        if abs(reference) < 1e-30:
+            raise ValueError(
+                f"the {bearing.name} patch delivers no net force along its "
+                "own axis by either pressure or traction; the selector is "
+                "probably spanning two faces that cancel")
+        load, delivered = flat, reference
+        shape = "a uniform traction (the patch stands edge-on to its force)"
 
     scale = bearing.force / delivered
     notes.append(
         f"{bearing.name}: {bearing.force / 1e3:.2f} kN spread over "
-        f"{facets.size} facets as a cosine contact pressure")
+        f"{facets.size} facets as {shape}")
     return load * scale
 
 

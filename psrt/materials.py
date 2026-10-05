@@ -145,6 +145,68 @@ MATERIALS: dict[str, Material] = {
         endurance_limit=70.0e6, thermal_conductivity=59.0, cte=18.0e-6,
         max_service_temp=c_to_k(230.0),
         derating=_d((20, 1.00), (100, 0.88), (150, 0.76), (200, 0.60))),
+
+    # --- candidate cores for the rail rod's stabilising sleeve -------------
+    # The concept leaves the sleeve material open, so these are here to be
+    # compared, not recommended. The composites are entered as ISOTROPIC
+    # equivalents -- a quasi-isotropic layup's in-plane figures -- because
+    # the solver is isotropic. A real laminate is far weaker through its
+    # thickness and its strength depends on the layup; treat these as a
+    # first cut and replace them with coupon data.
+    "CFRP-quasi-iso": Material(
+        key="CFRP-quasi-iso",
+        name="Carbon/epoxy, quasi-isotropic layup (isotropic equivalent)",
+        density=1550.0, youngs_modulus=55.0e9, poisson=0.30,
+        yield_strength=None, ultimate_strength=600.0e6,
+        endurance_limit=240.0e6, thermal_conductivity=5.0, cte=2.0e-6,
+        max_service_temp=c_to_k(150.0),
+        derating=_d((20, 1.00), (100, 0.90), (130, 0.75), (150, 0.55)),
+        source=("in-plane quasi-isotropic figures for a 60% fibre epoxy; "
+                "through-thickness and interlaminar strength are an order of "
+                "magnitude lower and are NOT represented. Epoxy matrices "
+                "soften near 130 C, which is close to rod temperature")),
+
+    "PEEK-CF30": Material(
+        key="PEEK-CF30", name="PEEK, 30% short carbon fibre (injection moulded)",
+        density=1410.0, youngs_modulus=22.0e9, poisson=0.35,
+        yield_strength=None, ultimate_strength=220.0e6,
+        endurance_limit=80.0e6, thermal_conductivity=0.9, cte=15.0e-6,
+        max_service_temp=c_to_k(250.0),
+        derating=_d((20, 1.00), (100, 0.85), (150, 0.62), (200, 0.45),
+                    (250, 0.35)),
+        source="flow-direction values; cross-flow is roughly 60% of these"),
+
+    "AZ80-T5": Material(
+        key="AZ80-T5", name="Magnesium AZ80-T5 (forged)",
+        density=1800.0, youngs_modulus=45.0e9, poisson=0.35,
+        yield_strength=275.0e6, ultimate_strength=380.0e6,
+        endurance_limit=100.0e6, thermal_conductivity=76.0, cte=26.0e-6,
+        max_service_temp=c_to_k(150.0),
+        derating=_d((20, 1.00), (100, 0.88), (150, 0.72), (200, 0.52))),
+
+    "7075-T6": Material(
+        key="7075-T6", name="Aluminium 7075-T6",
+        density=2810.0, youngs_modulus=71.7e9, poisson=0.33,
+        yield_strength=503.0e6, ultimate_strength=572.0e6,
+        endurance_limit=160.0e6, thermal_conductivity=130.0, cte=23.4e-6,
+        max_service_temp=c_to_k(200.0),
+        derating=_d((20, 1.00), (100, 0.92), (150, 0.75), (200, 0.50))),
+
+    "AlSi10Mg-T6": Material(
+        key="AlSi10Mg-T6",
+        name="Aluminium AlSi10Mg, laser powder-bed fused, stress-relieved + T6",
+        density=2670.0, youngs_modulus=70.0e9, poisson=0.33,
+        yield_strength=230.0e6, ultimate_strength=340.0e6,
+        endurance_limit=95.0e6, thermal_conductivity=140.0, cte=21.0e-6,
+        max_service_temp=c_to_k(200.0),
+        derating=_d((20, 1.00), (100, 0.88), (150, 0.70), (200, 0.46)),
+        source=("nominal LPBF values for a stress-relieved + T6 condition, "
+                "machined surfaces. Printed aluminium is more supplier- and "
+                "orientation-dependent than wrought: strength varies with "
+                "build direction, and the endurance limit here assumes the "
+                "surface has been MACHINED. As-built LPBF surfaces roughly "
+                "halve it, which matters because a lattice cannot be "
+                "machined -- see psrt.railrod.lattice")),
 }
 
 

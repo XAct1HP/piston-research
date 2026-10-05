@@ -52,10 +52,32 @@ GEOMETRY_PATHS = (
 )
 
 
+# Rail-rod parameters that change how the parts are LOADED but not their
+# shape. Leaving them out of the key means a preload or fit study re-uses the
+# solids, the meshes and the unit FEA solutions instead of rebuilding them.
+RAILROD_LOAD_ONLY = frozenset({
+    "bolt_preload", "seat_interference", "contact_depth", "bracing_fraction",
+    "bolt_proof_strength", "bolt_finish", "shell_mass",
+})
+
+
+def _geometry_payload(state: DesignState) -> dict:
+    payload = {p: state.get(p, None) for p in GEOMETRY_PATHS}
+    # Every rail-rod dimension shapes a solid, so when the concept is on the
+    # whole section is part of the key. Off, it contributes nothing and the
+    # conventional cache is untouched.
+    if state.has("railrod.enabled") and state["railrod.enabled"]:
+        for name in state.sections.get("railrod", {}):
+            if name in RAILROD_LOAD_ONLY:
+                continue
+            payload[f"railrod.{name}"] = state.get(f"railrod.{name}", None)
+    return payload
+
+
 def fingerprint(state: DesignState) -> str:
     import hashlib
     import json
-    payload = {p: state.get(p, None) for p in GEOMETRY_PATHS}
+    payload = _geometry_payload(state)
     return hashlib.sha256(
         json.dumps(payload, sort_keys=True, default=str).encode()
     ).hexdigest()[:16]
@@ -69,10 +91,21 @@ def build_all(state: DesignState, use_cache: bool = True) -> dict:
         return _CACHE[key]
 
     out = {}
+    railrod_on = state.has("railrod.enabled") and state["railrod.enabled"]
     for name, (builder, role) in build_mod.BUILDS.items():
+        if railrod_on and name == "rod":
+            continue
         solid = builder(state)
         material = materials_mod.get(state[f"materials.{role}"])
         out[name] = {"solid": solid, "properties": measure(solid, material)}
+
+    if railrod_on:
+        # The rail rod replaces the conventional rod with six separate
+        # solids, each measured in its own material.
+        from ..railrod import cad as rr_cad
+        for name, solid in rr_cad.build_parts(state).items():
+            material = materials_mod.get(rr_cad.part_material(state, name))
+            out[name] = {"solid": solid, "properties": measure(solid, material)}
 
     if use_cache:
         _CACHE[key] = out
@@ -96,10 +129,40 @@ def masses_from_geometry(state: DesignState) -> dict:
     parts = build_all(state)
     piston = parts["piston"]["properties"]
     pin = parts["pin"]["properties"]
-    rod = parts["rod"]["properties"]
+    if "rod" in parts:
+        rod = parts["rod"]["properties"]
+        hardware = state["rod.hardware_mass"]
+    else:
+        # Rail rod: every part is a real solid, the bolt included, so the
+        # only hardware left to lump at the big end is the bearing shells.
+        #
+        # One part is not ALL solid. The sleeve's B-rep is its skins, face
+        # shells and bearing pad; its lattice core is a mesh, so measuring
+        # the solids alone loses the core and under-reports the rod by the
+        # weight of it. Add the core back as its own body at the density the
+        # grading averages to -- which is exactly what
+        # psrt.railrod.analysis.layout_masses does, and the two paths are
+        # checked against each other in the test suite.
+        import dataclasses
+
+        from ..railrod import lattice as lattice_mod
+        from ..railrod.cad import PART_NAMES, sleeve_core_box
+        from ..railrod.layout import build_layout
+
+        measured = [parts[n]["properties"] for n in PART_NAMES]
+        layout = build_layout(state)
+        core = sleeve_core_box(layout)
+        if core is not None:
+            alloy = materials_mod.get(state["railrod.sleeve_material"])
+            fraction = lattice_mod.mean_density(
+                layout.lattice_rho_mid, layout.lattice_rho_end,
+                layout.lattice_exponent)
+            measured.append(measure(core, dataclasses.replace(
+                alloy, density=alloy.density * fraction)))
+        rod = combine(measured)
+        hardware = state["railrod.shell_mass"]
 
     length = state["engine.rod_length"]
-    hardware = state["rod.hardware_mass"]
     body_mass = rod.mass
     body_cg = rod.centre_of_mass[2]
 
@@ -221,8 +284,9 @@ def tessellate(state: DesignState, tolerance: float = 0.1) -> dict:
     parts = build_all(state)
     out = {}
     for part, entry in parts.items():
-        vertices, triangles = build_mod.tessellate_solid(
-            entry["solid"].val(), tolerance)
+        solid = entry["solid"].val() if hasattr(entry["solid"], "val") \
+            else entry["solid"]
+        vertices, triangles = build_mod.tessellate_solid(solid, tolerance)
         out[part] = {
             "vertices": [[v.x, v.y, v.z] for v in vertices],
             "triangles": [list(t) for t in triangles],

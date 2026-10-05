@@ -704,6 +704,149 @@ def cmd_fea(args) -> int:
     return 0
 
 
+def cmd_railrod(args) -> int:
+    """The rail connecting rod: layout, contact network, FEA per part."""
+    import numpy as np
+
+    state, _ = load_state(args.state)
+    if not state["railrod.enabled"]:
+        state.set("railrod.enabled", True, actor="cli",
+                  rationale="railrod command")
+    if args.rpm:
+        state.set("operating.speed", args.rpm * 2 * math.pi / 60,
+                  actor="cli", rationale="rpm override")
+    refresh_bounds(state)
+    from .evaluate import evaluate
+    from .railrod import analysis as rr
+
+    metrics = evaluate(state)
+    a = rr.analyse(state, metrics.sweep)
+    if args.coupled or args.fea:
+        from .railrod.coupled import coupled_analysis
+        print("  running the part FEAs for the coupled network ...")
+        a = coupled_analysis(state, target_elements=args.elements)
+        # the margins read the coupled network once it exists
+        metrics = evaluate(state, use_cache=False)
+    s = a.summary()
+    print(f"\n{state.meta.get('name', 'unnamed')}: rail connecting rod at "
+          f"{metrics.performance['speed_rpm']:.0f} rpm "
+          f"({'COUPLED' if args.coupled or args.fea else 'rigid'} network)")
+
+    _hdr("PARTS")
+    for name, mass in s["masses_kg"].items():
+        print(f"  {name:<16} {mass * 1e3:8.1f} g")
+    print(f"  {'total':<16} {s['total_mass_kg'] * 1e3:8.1f} g   plus "
+          f"{state['railrod.shell_mass'] * 1e3:.0f} g of shells; the design "
+          f"state says {state['masses.rod_total'] * 1e3:.0f} g for the rod")
+
+    n = s["notch"]
+    _hdr("NOTCH AND SWING")
+    _row("notch", f"{n['depth_mm']:.2f} mm deep, {n['ramp_angle_deg']:.0f} deg "
+         f"ramp", f"top radius {n['top_radius_mm']:.2f}, lower "
+         f"{n['lower_radius_mm']:.2f}, land {n['land_mm']:.2f} mm")
+    c = s["conformity"]
+    _row("tongue/flank fit", f"{c['gap_min_mm'] * 1e3:.1f}-"
+         f"{c['gap_max_mm'] * 1e3:.1f} um",
+         "conforms" if c["conforms"] else "DOES NOT CONFORM")
+    w = s["swing"]
+    _row("swing", f"free to {w['free_opening_deg']:.1f} deg",
+         f"hook-in at {w['hook_in_angle_deg']} deg; "
+         + ("assemblable" if w["assemblable"] else "NOT ASSEMBLABLE"))
+    ss = s["self_seating"]
+    _row("self-seating ramp", f">{ss['angle_for_self_seating_deg']:.0f} deg",
+         "yes" if ss["self_seating"] else "no -- " + ss["explanation"][:60])
+
+    sl = s.get("sleeve") or {}
+    if sl.get("core") == "sheet-gyroid":
+        pr, ev, ce = sl["printability"], sl["evacuation"], sl["cells"]
+        _hdr("SLEEVE (printed, sheet-gyroid core)")
+        _row("architecture", f"{sl['skin_mm']:.2f} mm rail skins, "
+             f"{sl['face_shell_mm']:.2f} mm face shells",
+             f"core {sl['core_mm'][0]:.1f} x {sl['core_mm'][1]:.1f} x "
+             f"{sl['core_mm'][2]:.0f} mm")
+        _row("lattice", f"{sl['cell_mm']:.1f} mm cell, "
+             f"{sl['relative_density_mid']:.2f} at mid-length to "
+             f"{sl['relative_density_end']:.2f} at the ends",
+             f"{ce['cells_across']:.1f} x {ce['cells_through']:.1f} cells"
+             + ("" if ce["homogenisation_valid"]
+                else "  -- UNDER 4, properties indicative"))
+        _row("sheet", f"{pr['nominal_sheet_mm']:.3f} mm nominal, "
+             f"{pr['min_wall_mm']:.3f} mm at its thinnest",
+             f"machine minimum {pr['machine_min_wall_mm']:.2f} mm"
+             + ("" if pr["printable"] else "  -- NOT PRINTABLE"))
+        _row("powder", f"{ev['aperture_mm']:.2f} mm channel, "
+             f"{ev['path_mm']:.0f} mm to get out",
+             f"{sl['ports']} ports; {ev['route']}")
+        _row("mass", f"{sl['mass_kg'] * 1e3:.1f} g",
+             f"mean relative density {sl['relative_density_mean']:.3f}")
+
+    _hdr("CONTACT FORCES (per side)")
+    for label, block in (("assembly", s["assembly"]),
+                         ("peak tension", s["peak_tension"]),
+                         ("peak firing", s["peak_compression"])):
+        items = ", ".join(f"{k.replace('_n', '')} {v / 1e3:.1f} kN"
+                          for k, v in block.items()
+                          if k.endswith("_n") and k != "rod_force_n")
+        print(f"  {label:<14} {items}")
+    _row("bolt range", f"{s['bolt_range_n'][0] / 1e3:.1f} - "
+         f"{s['bolt_range_n'][1] / 1e3:.1f} kN")
+    _row("rail seat opens at", f"{s['separation_factor']:.2f} x peak tension")
+
+    _hdr("MARGINS")
+    for m in metrics.report.sorted():
+        if m.component in ("rails", "rail notch", "rail joint",
+                           "rail-rod bolt", "swing clamps",
+                           "stabilising sleeve"):
+            print(f"  {m.safety_factor:6.2f}  {m.component}: {m.mode}")
+
+    for note in s["notes"]:
+        print(f"  - {note}")
+
+    if args.fea:
+        from .railrod import fea
+        parts = (fea.PARTS_WITH_FEA if args.fea == "all"
+                 else [p.strip() for p in args.fea.split(",")])
+        _hdr("FEA, EACH PART THROUGH THE CYCLE")
+        for part in parts:
+            r = fea.solve_part(state, part, target_elements=args.elements)
+            su = fea.summarise(r, state)
+            print(f"  {part:<16} {su['elements']:>7,} el  p99.5 "
+                  f"{su['p99_5_von_mises_pa'] / 1e6:7.0f} MPa at "
+                  f"{su['peak_theta_deg']:5.0f} deg   static SF "
+                  f"{su['static_safety_factor']:5.2f}   fatigue SF "
+                  f"{su['min_fatigue_safety_factor']:5.2f}")
+            for name, reg in (su.get("regions") or {}).items():
+                iface = reg["min_fatigue_at_interface"]
+                print(f"      {name:<20} {reg['elements']:>7,} el  "
+                      f"allowable {reg['allowable_pa'] / 1e6:6.0f} MPa  "
+                      f"p99.5 {reg['p99_5_von_mises_pa'] / 1e6:6.1f}   "
+                      f"static {reg['static_safety_factor']:5.2f}   "
+                      f"fatigue {reg['min_fatigue_safety_factor']:5.2f}"
+                      + (f"   ({iface:.2f} at the interface, not predictive)"
+                         if iface is not None else ""))
+    if args.export:
+        from . import geometry as geo
+        paths = geo.export(state, args.export, "step")
+        print(f"\n  wrote {len(paths)} STEP files to {args.export}")
+        lay = metrics.railrod.layout if hasattr(metrics, "railrod") else None
+        if lay is None:
+            from psrt.railrod.analysis import analyse as _rr
+            lay = _rr(state).layout
+        if lay.sleeve_core_kind == "sheet-gyroid":
+            import os
+
+            from psrt.railrod.cad import export_lattice_stl
+            from psrt.railrod.lattice import LatticeError
+            stl = os.path.join(args.export, "sleeve-lattice.stl")
+            try:
+                export_lattice_stl(lay, stl)
+                print(f"  wrote the sleeve's lattice core to {stl}")
+            except LatticeError as exc:
+                print(f"  the lattice core was not exported: {exc}")
+    print()
+    return 0
+
+
 def cmd_materials(args) -> int:
     print(f"\nMaterial database\n{BAR}")
     for mat in materials_mod.listing():
@@ -872,6 +1015,18 @@ def build_parser() -> argparse.ArgumentParser:
     s.add_argument("--elements", type=int, default=25_000,
                    help="target element count (default 25000)")
     s.set_defaults(func=cmd_fea)
+
+    s = sub.add_parser("railrod", help="the rail connecting rod: layout, "
+                       "contact network, FEA of each part")
+    s.add_argument("state")
+    s.add_argument("--rpm", type=float, default=None)
+    s.add_argument("--coupled", action="store_true",
+                   help="couple the parts' FEA flexibility into the network")
+    s.add_argument("--fea", default=None,
+                   help="'all' or a comma list of parts to solve")
+    s.add_argument("--elements", type=int, default=20_000)
+    s.add_argument("--export", default=None, help="write STEP files here")
+    s.set_defaults(func=cmd_railrod)
 
     s = sub.add_parser("materials", help="list the material database")
     s.set_defaults(func=cmd_materials)

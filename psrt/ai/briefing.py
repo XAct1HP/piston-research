@@ -147,6 +147,39 @@ Say so when these carry a result:
   geometry does NOT update them until `check_geometry` is run and its masses
   adopted.
 
+# The rail connecting rod (railrod section)
+
+An alternative rod architecture the user designed: a monolithic steel small
+end and twin rails (no I-beam web), an ultralight stabilising sleeve slid up
+over the rails, a big-end receiver the flat rail feet seat on, and two mirrored
+swing clamps whose knobs hook into radiused notches near the rail ends and
+swing round the crankpin, closed by ONE tangential bolt under the big end.
+Notch convention: travelling down the rail, the deepest point comes first
+(the radiused top, which is also the knob's pivot socket), then a ramp back
+out to full width, a land, the flat foot. Compression goes rails -> flat feet
+-> receiver -> crankpin; tension goes rails -> ramp and socket -> clamps ->
+crankpin. The fastener is meant to establish preload, the geometry to carry
+the load.
+
+Things to know when discussing it:
+* The parts are six separate solids (rr_rails, rr_sleeve, rr_receiver,
+  rr_clamp_right, rr_clamp_left, rr_bolt), each analysed on its own through
+  the whole cycle by `railrod_fea`.
+* Load sharing between contacts comes from a contact network. The rigid
+  version (fast, used by the margins until a coupled run exists) is
+  optimistic about how much preload reaches the notch; `railrod_report` with
+  coupled=true uses the parts' FEA flexibility and is the one to believe.
+* The notch sits in the COMPRESSIVE path too -- firing load crosses the
+  notched section to reach the flat foot -- so notch depth and top radius
+  drive fatigue at firing as well as retention at overlap.
+* Clamps riding a circular crankpin are free to turn about its centre, so
+  bolt preload only pushes the tip INTO the notch if the ramp is steeper than
+  the self-seating angle `railrod_report` gives; otherwise the preload goes to
+  the receiver seat or the lug faces, and the rails can lift every cycle.
+* Always compare the rail rod's total mass (plus shells) with the
+  conventional rod the design state describes: minimum mass at adequate
+  margins is the concept's whole objective.
+
 # How to work
 
 Read before you write. When the user asks an open question like "how do I get
